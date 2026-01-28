@@ -1,21 +1,16 @@
-# Cognitive Kernel
+# 🧠 Cognitive Kernel
 
 > **🇰🇷 한국어** | [🇺🇸 English](#english-version)
 
-> 기억, 주의력, 감정의 동역학을 탐구하기 위한 **모듈형 인지 프레임워크**
+**모듈형 인지 프레임워크** — 기억, 주의력, 감정의 동역학을 탐구하기 위한 시뮬레이션 도구
 
 ---
 
-### 🎯 왜 지금 필요한가?
+## 🎯 왜 지금 필요한가?
 
-**현대 LLM 에이전트에는 구조화된 장기 기억과 실행 제어 기능이 부족합니다.**  
+**현대 LLM 에이전트에는 구조화된 장기 기억과 실행 제어 기능이 부족합니다.**
+
 Cognitive Kernel은 이 갭을 메우기 위한 **drop-in 인지 서브시스템**을 제공합니다.
-
----
-
-## 🧠 이것은 무엇인가?
-
-**Cognitive Kernel**은 인지 기능을 모듈화한 **확장 가능한 프레임워크**입니다.
 
 ```
 ⚠️ 연구 및 실험 도구입니다.
@@ -24,50 +19,149 @@ Cognitive Kernel은 이 갭을 메우기 위한 **drop-in 인지 서브시스템
 
 ---
 
-## ⭐ 핵심 기능
-
-### 💾 진짜 장기 기억 (Persistence Layer)
-
-v1.1.0부터 **영속성 레이어**가 추가되었습니다:
+## ⭐ 핵심 기능: 3줄로 시작하는 장기 기억
 
 ```python
-# 저장 - 프로세스 종료 후에도 기억 유지
-engine.save_to_json("memory.json")
-engine.save_to_sqlite("memory.db")
+from cognitive_kernel import CognitiveKernel
 
-# 로드 - 다른 세션에서 복구
-engine.load_from_json("memory.json")
+with CognitiveKernel("my_brain") as kernel:
+    kernel.remember("meeting", {"topic": "project"}, importance=0.9)
+    memories = kernel.recall(k=5)           # PageRank 기반 중요도 회상
+    decision = kernel.decide(["rest", "work"])  # Softmax 의사결정
+# 자동 저장됨 → 프로세스 종료 후에도 기억 유지
 ```
 
-**이제 "장기 기억"이라는 표현이 정확합니다:**
-- ✅ 프로세스 종료 후에도 기억 유지
-- ✅ 파일/DB로 영구 보존
-- ✅ 다른 세션에서 복구 가능
+### ✅ 이것만으로:
 
-### 💡 MemoryRank — 중요도 기반 기억 랭킹
+| 기능 | 설명 | 알고리즘 |
+|------|------|----------|
+| `remember()` | 기억 저장 (장기 기억) | 시간축 저장 + 자동 영속성 |
+| `recall()` | 중요한 기억 회상 | **Google PageRank** |
+| `decide()` | 의사결정 | **Softmax Utility** |
 
-Google PageRank 알고리즘을 기억 네트워크에 적용:
+→ [장기 기억 상세 설명](./docs/LONG_TERM_MEMORY.md)
 
-```python
-from memoryrank import MemoryRankEngine
-engine = MemoryRankEngine()
-engine.build_graph(edges, attributes)  # recency, emotion, frequency
-top_memories = engine.get_top_memories(k=5)
+---
 
-# 장기 저장
-engine.save_to_json("memory_graph.json")
+## 📐 핵심 수식
+
+### 1. 기억 중요도 (MemoryRank)
+
+**Personalized PageRank** 알고리즘:
+
+$$
+\mathbf{r}^{(t+1)} = \alpha \cdot M \cdot \mathbf{r}^{(t)} + (1-\alpha) \cdot \mathbf{v}
+$$
+
+- $\mathbf{r}$: 기억 중요도 벡터
+- $M$: 기억 전이 행렬 (열 정규화)
+- $\alpha$: 감쇠 계수 (기본값: 0.85)
+- $\mathbf{v}$: 개인화 벡터 (recency, emotion, frequency 가중치)
+
+### 2. 시간 감쇠 (Panorama)
+
+**지수 감쇠 함수**:
+
+$$
+S(t) = S_0 \cdot e^{-\lambda \cdot \Delta t}, \quad \lambda = \frac{\ln 2}{t_{1/2}}
+$$
+
+- $S(t)$: 시간 $t$에서의 중요도
+- $t_{1/2}$: 반감기 (기본값: 3600초 = 1시간)
+
+### 3. 의사결정 (PFC)
+
+**Softmax 선택 확률**:
+
+$$
+P(a_i) = \frac{e^{U(a_i) / T}}{\sum_j e^{U(a_j) / T}}
+$$
+
+- $U(a)$: 행동 $a$의 효용 = 기대보상 - 비용 - 위험
+- $T$: 온도 (탐색 vs 착취 균형)
+
+→ [이론적 기반 상세](./docs/ARCHITECTURE.md)
+
+---
+
+## 💾 장기 기억이란?
+
+### 컴퓨터 공학적 정의
+
+> **영속성(Persistence)**: 프로세스 종료 후에도 데이터가 유지됨
+
+### Cognitive Kernel의 구현
+
+```
+세션 A (프로세스 1)          세션 B (프로세스 2)
+─────────────────────      ─────────────────────
+kernel.remember(...)  →    파일 저장
+        ↓                       ↓
+프로세스 종료              CognitiveKernel("my_brain")
+                                ↓
+                           자동 로드 → 기억 복구!
 ```
 
-### 🎬 PFC — 작업 기억 & 의사결정
+### 저장 구조
 
-Miller's Law (7±2) 기반 작업 기억과 Softmax 행동 선택:
-
-```python
-from pfc import PFCEngine, Action
-pfc = PFCEngine()
-pfc.load_from_memoryrank(top_memories)
-action = pfc.select_action([Action(name="respond", expected_reward=0.8)])
 ```
+.cognitive_kernel/my_brain/
+├── panorama.json      # 시간축 이벤트 (기억 데이터)
+├── memoryrank.json    # 중요도 그래프
+├── edges.json         # 기억 연결 관계
+├── q_values.json      # 습관 학습 (Q-Learning)
+└── meta.json          # 세션 메타데이터
+```
+
+→ [장기 기억 기술 문서](./docs/LONG_TERM_MEMORY.md)
+
+---
+
+## 🧪 테스트 결과
+
+### 장기 기억 증명
+
+```bash
+# 테스트 실행
+cd /Users/jazzin/Desktop/00_BRAIN/Cognitive_Kernel
+python3 cognitive_kernel.py
+```
+
+**결과:**
+
+```
+📦 Session: test_session
+📝 기억 저장... 3개
+🔍 기억 회상 (Top 3): idea(0.349), conversation(0.333), meeting(0.318)
+🎯 의사결정: rest (효용: 0.250)
+✅ 자동 저장 완료!
+
+🔄 세션 복구 테스트...
+   복구된 이벤트: 3개 ← 프로세스 종료 후에도 유지됨!
+```
+
+### 7개 엔진 통합 시뮬레이션
+
+| 시나리오 | Stress Max | Hyperarousal | Efficiency | Alerts |
+|---------|-----------|--------------|------------|--------|
+| Normal Day | 0.44 | 1회 | 0.71 | 1개 |
+| PTSD | **0.80** | **3회** | **0.61** | **5개** |
+
+→ [전체 테스트 결과](./docs/TEST_RESULTS.md)
+
+---
+
+## 📦 전체 모듈 구성
+
+| 모듈 | 역할 | 핵심 알고리즘 | 영속성 |
+|------|------|-------------|--------|
+| **[MemoryRank](./MemoryRank/)** | 기억 중요도 | PageRank | ✅ JSON/NPZ |
+| **[Panorama](./Panorama/)** | 시간축 기억 | Exponential Decay | ✅ JSON/SQLite |
+| **[PFC](./PFC/)** | 의사결정 | Softmax Utility | |
+| **[BasalGanglia](./BasalGanglia/)** | 습관 학습 | TD-Learning | ✅ Q-values |
+| **[Amygdala](./Amygdala/)** | 감정/위협 | Rescorla-Wagner | |
+| **[Hypothalamus](./Hypothalamus/)** | 에너지/스트레스 | HPA Dynamics | |
+| **[Thalamus](./Thalamus/)** | 입력 필터링 | Salience Gating | |
 
 ---
 
@@ -83,7 +177,6 @@ action = pfc.select_action([Action(name="respond", expected_reward=0.8)])
 
 - AI 에이전트 메모리 서브시스템
 - RAG 검색 결과 필터링/랭킹
-- 추천 시스템 백본
 - LangChain/LlamaIndex 통합
 
 ### 💼 상업용 (Commercial)
@@ -98,73 +191,26 @@ action = pfc.select_action([Action(name="respond", expected_reward=0.8)])
 
 ### Edge AI First
 
-모든 모듈은 **Edge 디바이스에서도 실행 가능**하도록 설계:
-
 ```
-✅ 경량화된 알고리즘
-✅ NumPy 외 필수 의존성 최소화
+✅ 경량 알고리즘 (NumPy 외 필수 의존성 없음)
 ✅ 모듈별 독립 실행 가능
 ✅ 클라우드 의존성 없음
+✅ 확장 가능한 구조
 ```
 
-### 확장 가능한 구조
-
-각 모듈은 **독립적**입니다. 필요한 것만 선택하세요:
+### 모듈 조합
 
 ```python
 # 1개만 사용
 from memoryrank import MemoryRankEngine
 
 # 조합해서 사용
-from memoryrank import MemoryRankEngine
-from pfc import PFCEngine
-from panorama import PanoramaMemoryEngine
-
-# 직접 확장
-class MyCustomEngine:
-    def __init__(self):
-        self.memory = MemoryRankEngine()
-        self.decision = PFCEngine()
-```
-
-**사용자 확장 예시**:
-- 새 엔진 추가 (Hippocampus, Cerebellum 등)
-- 기존 엔진 커스터마이징
-- 다른 프레임워크와 통합
-
----
-
-## 📦 전체 모듈 구성
-
-| 모듈 | 역할 | 핵심 알고리즘 | 영속성 |
-|------|------|-------------|--------|
-| **[MemoryRank](./MemoryRank/)** | 기억 중요도 | PageRank | ✅ JSON/NPZ |
-| **[PFC](./PFC/)** | 의사결정 | Softmax Utility | |
-| **[Panorama](./Panorama/)** | 시간축 기억 | Exponential Decay | ✅ JSON/SQLite |
-| **[BasalGanglia](./BasalGanglia/)** | 습관 학습 | TD-Learning | |
-| **[Amygdala](./Amygdala/)** | 감정/위협 | Rescorla-Wagner | |
-| **[Hypothalamus](./Hypothalamus/)** | 에너지/상태 | HPA Dynamics | |
-| **[Thalamus](./Thalamus/)** | 입력 필터링 | Salience Gating | |
-
----
-
-## 💡 핵심 사용법 (3줄로 시작)
-
-```python
 from cognitive_kernel import CognitiveKernel
 
-# 자동 저장/로드 세션
-with CognitiveKernel("my_brain") as kernel:
-    kernel.remember("meeting", {"topic": "project"}, importance=0.9)
-    memories = kernel.recall(k=5)
-    decision = kernel.decide(["rest", "work", "exercise"])
+# 직접 확장
+class MyBrain(CognitiveKernel):
+    def custom_recall(self): ...
 ```
-
-**이것만으로:**
-- ✅ 기억 저장 (장기 기억)
-- ✅ 중요도 계산 (PageRank)
-- ✅ 의사결정 (Softmax)
-- ✅ 자동 저장/복구
 
 ---
 
@@ -175,12 +221,14 @@ git clone https://github.com/qquartsco-svg/Cognitive_Kernel.git
 cd Cognitive_Kernel
 pip install numpy
 
-# 개별 모듈 테스트
-python MemoryRank/test_memoryrank_engine.py
-python PFC/test_pfc_engine.py
+# 장기 기억 테스트
+python3 cognitive_kernel.py
 
-# 통합 시뮬레이션
-python examples/full_brain_simulation.py
+# 7개 엔진 통합 시뮬레이션
+python3 examples/full_brain_simulation.py
+
+# 4개 핵심 파이프라인
+python3 examples/integrated_pipeline.py
 ```
 
 ---
@@ -189,9 +237,11 @@ python examples/full_brain_simulation.py
 
 | 문서 | 설명 |
 |------|------|
+| [LONG_TERM_MEMORY.md](./docs/LONG_TERM_MEMORY.md) | 장기 기억 기술 문서 |
+| [API_REFERENCE.md](./docs/API_REFERENCE.md) | API 레퍼런스 |
 | [ARCHITECTURE.md](./docs/ARCHITECTURE.md) | 이론적 기반, 수식, 참고 문헌 |
+| [TEST_RESULTS.md](./docs/TEST_RESULTS.md) | 전체 테스트 결과 |
 | [VERIFICATION_STATUS.md](./docs/VERIFICATION_STATUS.md) | 이론 ↔ 코드 일치 검증 |
-| [ROADMAP.md](./docs/ROADMAP.md) | 구현 계획 |
 
 ---
 
@@ -199,15 +249,12 @@ python examples/full_brain_simulation.py
 
 모든 핵심 모듈은 **PHAM (Proof of Honest Authorship & Merit)** 블록체인으로 서명:
 
-| 모듈 | 서명 | 상세 |
+| 모듈 | 서명 | 등급 |
 |------|------|------|
+| cognitive_kernel.py | ✅ | A_HIGH (0.9998) |
 | MemoryRank | ✅ | [서명](./MemoryRank/PHAM_BLOCKCHAIN_SIGNATURE.md) |
 | Panorama | ✅ | [서명](./Panorama/PHAM_BLOCKCHAIN_SIGNATURE.md) |
 | PFC | ✅ | [서명](./PFC/PHAM_BLOCKCHAIN_SIGNATURE.md) |
-| BasalGanglia | ✅ | [서명](./BasalGanglia/BLOCKCHAIN_INFO.md) |
-| Amygdala | ✅ | [서명](./Amygdala/BLOCKCHAIN_INFO.md) |
-| Hypothalamus | ✅ | [서명](./Hypothalamus/BLOCKCHAIN_INFO.md) |
-| Thalamus | ✅ | [서명](./Thalamus/BLOCKCHAIN_INFO.md) |
 
 ---
 
@@ -227,22 +274,17 @@ MIT License — 자유롭게 사용, 수정, 배포 가능
 
 # English Version
 
-> [🇰🇷 한국어](#cognitive-kernel) | **🇺🇸 English**
+> [🇰🇷 한국어](#-cognitive-kernel) | **🇺🇸 English**
 
-> A **modular cognitive framework** for exploring dynamics of memory, attention, and emotion
+**Modular Cognitive Framework** — A simulation tool for exploring dynamics of memory, attention, and emotion
 
 ---
 
-### 🎯 Why Now?
+## 🎯 Why Now?
 
-**Modern LLM agents lack structured long-term memory and executive control.**  
+**Modern LLM agents lack structured long-term memory and executive control.**
+
 Cognitive Kernel provides **drop-in cognitive subsystems** to address this gap.
-
----
-
-## 🧠 What is this?
-
-**Cognitive Kernel** is an **extensible framework** with modularized cognitive functions.
 
 ```
 ⚠️ Research and experimentation tool.
@@ -251,50 +293,149 @@ Cognitive Kernel provides **drop-in cognitive subsystems** to address this gap.
 
 ---
 
-## ⭐ Core Features
-
-### 💾 True Long-term Memory (Persistence Layer)
-
-v1.1.0 adds **persistence layer**:
+## ⭐ Core Feature: Long-term Memory in 3 Lines
 
 ```python
-# Save - memory persists after process termination
-engine.save_to_json("memory.json")
-engine.save_to_sqlite("memory.db")
+from cognitive_kernel import CognitiveKernel
 
-# Load - recover in different session
-engine.load_from_json("memory.json")
+with CognitiveKernel("my_brain") as kernel:
+    kernel.remember("meeting", {"topic": "project"}, importance=0.9)
+    memories = kernel.recall(k=5)           # PageRank-based importance recall
+    decision = kernel.decide(["rest", "work"])  # Softmax decision-making
+# Auto-saved → Memory persists after process termination
 ```
 
-**"Long-term memory" is now accurate:**
-- ✅ Memory persists after process termination
-- ✅ Permanent storage in file/DB
-- ✅ Recoverable in different sessions
+### ✅ This gives you:
 
-### 💡 MemoryRank — Importance-based Memory Ranking
+| Feature | Description | Algorithm |
+|---------|-------------|-----------|
+| `remember()` | Store memory (long-term) | Timeline storage + auto-persistence |
+| `recall()` | Recall important memories | **Google PageRank** |
+| `decide()` | Decision making | **Softmax Utility** |
 
-Applies Google's PageRank algorithm to memory networks:
+→ [Long-term Memory Details](./docs/LONG_TERM_MEMORY.md)
 
-```python
-from memoryrank import MemoryRankEngine
-engine = MemoryRankEngine()
-engine.build_graph(edges, attributes)  # recency, emotion, frequency
-top_memories = engine.get_top_memories(k=5)
+---
 
-# Long-term storage
-engine.save_to_json("memory_graph.json")
+## 📐 Core Formulas
+
+### 1. Memory Importance (MemoryRank)
+
+**Personalized PageRank** algorithm:
+
+$$
+\mathbf{r}^{(t+1)} = \alpha \cdot M \cdot \mathbf{r}^{(t)} + (1-\alpha) \cdot \mathbf{v}
+$$
+
+- $\mathbf{r}$: Memory importance vector
+- $M$: Memory transition matrix (column-normalized)
+- $\alpha$: Damping factor (default: 0.85)
+- $\mathbf{v}$: Personalization vector (recency, emotion, frequency weights)
+
+### 2. Temporal Decay (Panorama)
+
+**Exponential decay function**:
+
+$$
+S(t) = S_0 \cdot e^{-\lambda \cdot \Delta t}, \quad \lambda = \frac{\ln 2}{t_{1/2}}
+$$
+
+- $S(t)$: Importance at time $t$
+- $t_{1/2}$: Half-life (default: 3600s = 1 hour)
+
+### 3. Decision Making (PFC)
+
+**Softmax selection probability**:
+
+$$
+P(a_i) = \frac{e^{U(a_i) / T}}{\sum_j e^{U(a_j) / T}}
+$$
+
+- $U(a)$: Utility of action $a$ = expected reward - cost - risk
+- $T$: Temperature (exploration vs exploitation balance)
+
+→ [Theoretical Foundation](./docs/ARCHITECTURE.md)
+
+---
+
+## 💾 What is Long-term Memory?
+
+### Computer Science Definition
+
+> **Persistence**: Data survives process termination
+
+### Cognitive Kernel Implementation
+
+```
+Session A (Process 1)          Session B (Process 2)
+─────────────────────         ─────────────────────
+kernel.remember(...)  →       File saved
+        ↓                          ↓
+Process terminates            CognitiveKernel("my_brain")
+                                   ↓
+                              Auto-load → Memory recovered!
 ```
 
-### 🎬 PFC — Working Memory & Decision Making
+### Storage Structure
 
-Miller's Law (7±2) working memory and Softmax action selection:
-
-```python
-from pfc import PFCEngine, Action
-pfc = PFCEngine()
-pfc.load_from_memoryrank(top_memories)
-action = pfc.select_action([Action(name="respond", expected_reward=0.8)])
 ```
+.cognitive_kernel/my_brain/
+├── panorama.json      # Timeline events (memory data)
+├── memoryrank.json    # Importance graph
+├── edges.json         # Memory connections
+├── q_values.json      # Habit learning (Q-Learning)
+└── meta.json          # Session metadata
+```
+
+→ [Long-term Memory Technical Docs](./docs/LONG_TERM_MEMORY.md)
+
+---
+
+## 🧪 Test Results
+
+### Long-term Memory Proof
+
+```bash
+# Run test
+cd /Users/jazzin/Desktop/00_BRAIN/Cognitive_Kernel
+python3 cognitive_kernel.py
+```
+
+**Result:**
+
+```
+📦 Session: test_session
+📝 Memories saved: 3
+🔍 Recall (Top 3): idea(0.349), conversation(0.333), meeting(0.318)
+🎯 Decision: rest (utility: 0.250)
+✅ Auto-saved!
+
+🔄 Session recovery test...
+   Recovered events: 3 ← Persists after process termination!
+```
+
+### 7-Engine Integration Simulation
+
+| Scenario | Stress Max | Hyperarousal | Efficiency | Alerts |
+|----------|-----------|--------------|------------|--------|
+| Normal Day | 0.44 | 1 | 0.71 | 1 |
+| PTSD | **0.80** | **3** | **0.61** | **5** |
+
+→ [Full Test Results](./docs/TEST_RESULTS.md)
+
+---
+
+## 📦 All Modules
+
+| Module | Role | Core Algorithm | Persistence |
+|--------|------|---------------|-------------|
+| **[MemoryRank](./MemoryRank/)** | Memory importance | PageRank | ✅ JSON/NPZ |
+| **[Panorama](./Panorama/)** | Timeline memory | Exponential Decay | ✅ JSON/SQLite |
+| **[PFC](./PFC/)** | Decision making | Softmax Utility | |
+| **[BasalGanglia](./BasalGanglia/)** | Habit learning | TD-Learning | ✅ Q-values |
+| **[Amygdala](./Amygdala/)** | Emotion/Threat | Rescorla-Wagner | |
+| **[Hypothalamus](./Hypothalamus/)** | Energy/Stress | HPA Dynamics | |
+| **[Thalamus](./Thalamus/)** | Input filtering | Salience Gating | |
 
 ---
 
@@ -310,7 +451,6 @@ action = pfc.select_action([Action(name="respond", expected_reward=0.8)])
 
 - AI agent memory subsystem
 - RAG result filtering/ranking
-- Recommendation system backbone
 - LangChain/LlamaIndex integration
 
 ### 💼 Commercial
@@ -325,73 +465,26 @@ action = pfc.select_action([Action(name="respond", expected_reward=0.8)])
 
 ### Edge AI First
 
-All modules designed to **run on Edge devices**:
-
 ```
-✅ Lightweight algorithms
-✅ Minimal dependencies (NumPy only)
+✅ Lightweight algorithms (only NumPy dependency)
 ✅ Each module runs independently
 ✅ No cloud dependency
+✅ Extensible structure
 ```
 
-### Extensible Structure
-
-Each module is **independent**. Use only what you need:
+### Module Composition
 
 ```python
 # Use one
 from memoryrank import MemoryRankEngine
 
 # Combine
-from memoryrank import MemoryRankEngine
-from pfc import PFCEngine
-from panorama import PanoramaMemoryEngine
-
-# Extend yourself
-class MyCustomEngine:
-    def __init__(self):
-        self.memory = MemoryRankEngine()
-        self.decision = PFCEngine()
-```
-
-**User extension examples**:
-- Add new engines (Hippocampus, Cerebellum, etc.)
-- Customize existing engines
-- Integrate with other frameworks
-
----
-
-## 📦 All Modules
-
-| Module | Role | Core Algorithm | Persistence |
-|--------|------|---------------|-------------|
-| **[MemoryRank](./MemoryRank/)** | Memory importance | PageRank | ✅ JSON/NPZ |
-| **[PFC](./PFC/)** | Decision making | Softmax Utility | |
-| **[Panorama](./Panorama/)** | Timeline memory | Exponential Decay | ✅ JSON/SQLite |
-| **[BasalGanglia](./BasalGanglia/)** | Habit learning | TD-Learning | |
-| **[Amygdala](./Amygdala/)** | Emotion/Threat | Rescorla-Wagner | |
-| **[Hypothalamus](./Hypothalamus/)** | Energy/State | HPA Dynamics | |
-| **[Thalamus](./Thalamus/)** | Input filtering | Salience Gating | |
-
----
-
-## 💡 핵심 사용법 (3줄로 시작)
-
-```python
 from cognitive_kernel import CognitiveKernel
 
-# 자동 저장/로드 세션
-with CognitiveKernel("my_brain") as kernel:
-    kernel.remember("meeting", {"topic": "project"}, importance=0.9)
-    memories = kernel.recall(k=5)
-    decision = kernel.decide(["rest", "work", "exercise"])
+# Extend
+class MyBrain(CognitiveKernel):
+    def custom_recall(self): ...
 ```
-
-**이것만으로:**
-- ✅ 기억 저장 (장기 기억)
-- ✅ 중요도 계산 (PageRank)
-- ✅ 의사결정 (Softmax)
-- ✅ 자동 저장/복구
 
 ---
 
@@ -402,12 +495,14 @@ git clone https://github.com/qquartsco-svg/Cognitive_Kernel.git
 cd Cognitive_Kernel
 pip install numpy
 
-# Test individual modules
-python MemoryRank/test_memoryrank_engine.py
-python PFC/test_pfc_engine.py
+# Long-term memory test
+python3 cognitive_kernel.py
 
-# Full simulation
-python examples/full_brain_simulation.py
+# 7-engine simulation
+python3 examples/full_brain_simulation.py
+
+# 4-engine pipeline
+python3 examples/integrated_pipeline.py
 ```
 
 ---
@@ -416,9 +511,11 @@ python examples/full_brain_simulation.py
 
 | Document | Description |
 |----------|-------------|
+| [LONG_TERM_MEMORY.md](./docs/LONG_TERM_MEMORY.md) | Long-term memory technical docs |
+| [API_REFERENCE.md](./docs/API_REFERENCE.md) | API Reference |
 | [ARCHITECTURE.md](./docs/ARCHITECTURE.md) | Theoretical foundation, formulas, references |
+| [TEST_RESULTS.md](./docs/TEST_RESULTS.md) | Full test results |
 | [VERIFICATION_STATUS.md](./docs/VERIFICATION_STATUS.md) | Theory ↔ Code verification |
-| [ROADMAP.md](./docs/ROADMAP.md) | Implementation plan |
 
 ---
 
@@ -426,15 +523,12 @@ python examples/full_brain_simulation.py
 
 All core modules signed with **PHAM (Proof of Honest Authorship & Merit)** blockchain:
 
-| Module | Signed | Details |
-|--------|--------|---------|
+| Module | Signed | Grade |
+|--------|--------|-------|
+| cognitive_kernel.py | ✅ | A_HIGH (0.9998) |
 | MemoryRank | ✅ | [Signature](./MemoryRank/PHAM_BLOCKCHAIN_SIGNATURE.md) |
 | Panorama | ✅ | [Signature](./Panorama/PHAM_BLOCKCHAIN_SIGNATURE.md) |
 | PFC | ✅ | [Signature](./PFC/PHAM_BLOCKCHAIN_SIGNATURE.md) |
-| BasalGanglia | ✅ | [Signature](./BasalGanglia/BLOCKCHAIN_INFO.md) |
-| Amygdala | ✅ | [Signature](./Amygdala/BLOCKCHAIN_INFO.md) |
-| Hypothalamus | ✅ | [Signature](./Hypothalamus/BLOCKCHAIN_INFO.md) |
-| Thalamus | ✅ | [Signature](./Thalamus/BLOCKCHAIN_INFO.md) |
 
 ---
 

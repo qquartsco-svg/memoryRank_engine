@@ -2,7 +2,7 @@
 
 > **🇰🇷 한국어** | [🇺🇸 English](#english-version)
 
-> **인지 운영체제** — 기억, 주의력, 추론을 통합 관리하는 모듈형 인지 엔진
+> **인지 운영체제** — 기억, 주의력, 감정, 추론을 통합 관리하는 모듈형 인지 엔진
 
 ---
 
@@ -15,17 +15,24 @@ Cognitive Kernel은 **기억, 주의력, 감정, 추론**을 관리합니다.
 
 ---
 
-## 🎬 기억의 영화관 비유
+## 🎬 뇌 구조 비유
 
 \`\`\`
-┌─────────────────────────────────────────────────────────────┐
-│                    🧠 Cognitive Kernel                       │
-├─────────────────────────────────────────────────────────────┤
-│   🎞️ Panorama (필름)     →  시간순 기록                      │
-│   💡 MemoryRank (조광기)  →  중요도 계산                      │
-│   🎬 PFC (감독)          →  의식적 결정                      │
-│   👷 BasalGanglia (스태프) →  습관 자동화                     │
-└─────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────┐
+│                        🧠 Cognitive Kernel                           │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│   📡 Thalamus (감각 필터)      →  입력 게이팅                         │
+│   😨 Amygdala (감정 처리)      →  위협 감지, 정서 반응                 │
+│   ⚡ Hypothalamus (항상성)     →  에너지/스트레스 조절                 │
+│                         ↓                                           │
+│   🎞️ Panorama (필름)           →  시간순 기록                        │
+│   💡 MemoryRank (조광기)       →  중요도 계산                         │
+│                         ↓                                           │
+│   🎬 PFC (감독)               →  의식적 결정                         │
+│   👷 BasalGanglia (스태프)     →  습관 자동화                         │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
 \`\`\`
 
 ---
@@ -34,10 +41,25 @@ Cognitive Kernel은 **기억, 주의력, 감정, 추론**을 관리합니다.
 
 | 모듈 | 역할 | 비유 | 상태 |
 |------|------|------|------|
-| **[MemoryRank](./MemoryRank/)** | 기억 중요도 계산 | 조광기 | ✅ v1.0.0 |
+| **[Thalamus](./Thalamus/)** | 감각 입력 필터링, 주의 게이팅 | 접수 데스크 | ✅ v1.0.0 |
+| **[Amygdala](./Amygdala/)** | 감정 처리, 위협 감지 | 경비실 | ✅ v1.0.0 |
+| **[Hypothalamus](./Hypothalamus/)** | 항상성, 스트레스 반응 | 관리실 | ✅ v1.0.0 |
 | **[Panorama](./Panorama/)** | 시간축 에피소드 기억 | 필름 | ✅ v1.0.0 |
-| **[PFC](./PFC/)** | 작업 기억, 행동 선택, 억제 | 영사기 + 감독 | ✅ v1.0.0 |
-| **[BasalGanglia](./BasalGanglia/)** | 행동 선택, 습관 학습, Q-Learning | 스태프 | ✅ v1.0.0 |
+| **[MemoryRank](./MemoryRank/)** | 기억 중요도 계산 | 조광기 | ✅ v1.0.0 |
+| **[PFC](./PFC/)** | 작업 기억, 행동 선택, 억제 | 감독 | ✅ v1.0.0 |
+| **[BasalGanglia](./BasalGanglia/)** | 행동 선택, 습관 학습 | 스태프 | ✅ v1.0.0 |
+
+---
+
+## 🔗 정보 흐름
+
+\`\`\`
+외부 입력 → Thalamus (필터링) → Amygdala (감정 태그)
+              ↓                        ↓
+         Panorama (기록)         Hypothalamus (에너지 조절)
+              ↓
+         MemoryRank (중요도) → PFC (결정) → BasalGanglia (실행)
+\`\`\`
 
 ---
 
@@ -75,7 +97,7 @@ MIT License
 
 > [🇰🇷 한국어](#cognitive-kernel) | **🇺🇸 English**
 
-> **Cognitive Operating System** — A modular cognitive engine for memory, attention, and reasoning
+> **Cognitive Operating System** — A modular cognitive engine for memory, attention, emotion, and reasoning
 
 ---
 
@@ -88,17 +110,24 @@ Cognitive Kernel manages **memory, attention, emotion, and reasoning**.
 
 ---
 
-## 🎬 The Memory Theater Metaphor
+## 🎬 Brain Architecture Metaphor
 
 \`\`\`
-┌─────────────────────────────────────────────────────────────┐
-│                    🧠 Cognitive Kernel                       │
-├─────────────────────────────────────────────────────────────┤
-│   🎞️ Panorama (Film)      →  Timeline Recording              │
-│   💡 MemoryRank (Dimmer)   →  Importance Calculation          │
-│   🎬 PFC (Director)        →  Conscious Decision              │
-│   👷 BasalGanglia (Staff)  →  Habit Automation                │
-└─────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────┐
+│                        🧠 Cognitive Kernel                           │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│   📡 Thalamus (Sensory Filter)  →  Input Gating                     │
+│   😨 Amygdala (Emotion)         →  Threat Detection                 │
+│   ⚡ Hypothalamus (Homeostasis) →  Energy/Stress Regulation         │
+│                         ↓                                           │
+│   🎞️ Panorama (Film)            →  Timeline Recording               │
+│   💡 MemoryRank (Dimmer)        →  Importance Calculation           │
+│                         ↓                                           │
+│   🎬 PFC (Director)             →  Conscious Decision               │
+│   👷 BasalGanglia (Staff)       →  Habit Automation                 │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
 \`\`\`
 
 ---
@@ -107,43 +136,24 @@ Cognitive Kernel manages **memory, attention, emotion, and reasoning**.
 
 | Module | Role | Metaphor | Status |
 |--------|------|----------|--------|
-| **[MemoryRank](./MemoryRank/)** | Memory importance ranking | Dimmer | ✅ v1.0.0 |
+| **[Thalamus](./Thalamus/)** | Sensory filtering, attention gating | Reception Desk | ✅ v1.0.0 |
+| **[Amygdala](./Amygdala/)** | Emotion processing, threat detection | Security Guard | ✅ v1.0.0 |
+| **[Hypothalamus](./Hypothalamus/)** | Homeostasis, stress response | Facility Manager | ✅ v1.0.0 |
 | **[Panorama](./Panorama/)** | Timeline-based episodic memory | Film | ✅ v1.0.0 |
-| **[PFC](./PFC/)** | Working memory, action selection, inhibition | Director | ✅ v1.0.0 |
-| **[BasalGanglia](./BasalGanglia/)** | Action selection, habit learning, Q-Learning | Staff | ✅ v1.0.0 |
+| **[MemoryRank](./MemoryRank/)** | Memory importance ranking | Dimmer | ✅ v1.0.0 |
+| **[PFC](./PFC/)** | Working memory, action selection | Director | ✅ v1.0.0 |
+| **[BasalGanglia](./BasalGanglia/)** | Action selection, habit learning | Staff | ✅ v1.0.0 |
 
 ---
 
-## 🔗 Module Integration Flow
+## 🔗 Information Flow
 
 \`\`\`
-Panorama (Timeline) → MemoryRank (Importance) → PFC (Decision) → BasalGanglia (Execution)
-     │                       │                       │                    │
-     ▼                       ▼                       ▼                    ▼
-"What happened?"     "What matters?"      "What to do?"         "Just do it!"
-\`\`\`
-
----
-
-## 🚀 Quick Start
-
-\`\`\`bash
-git clone https://github.com/qquartsco-svg/Cognitive_Kernel.git
-cd Cognitive_Kernel
-python examples/integrated_pipeline.py
-\`\`\`
-
-### Example Output
-
-\`\`\`
-🧠 Cognitive Kernel - Integrated Pipeline
-
-🎞️ [1] PANORAMA - 10 events recorded
-💡 [2] MEMORYRANK - Top 5 important memories identified
-🎬 [3] PFC - Selected action: 'exercise_gym' (Utility: 0.290)
-👷 [4] BASALGANGLIA - Habit suggests: 'go_home_rest' (Q: 0.439)
-
-🎯 Final: Conscious decision overrides habit
+External Input → Thalamus (Filter) → Amygdala (Emotion Tag)
+                    ↓                        ↓
+                Panorama (Record)      Hypothalamus (Energy)
+                    ↓
+                MemoryRank (Importance) → PFC (Decide) → BasalGanglia (Execute)
 \`\`\`
 
 ---
@@ -155,33 +165,18 @@ python examples/integrated_pipeline.py
 | Domain | Application |
 |--------|-------------|
 | **AI Agents** | Long-term memory + context-aware conversation |
-| **Recommendation Systems** | User interest importance-based recommendations |
+| **Recommendation** | User interest importance-based recommendations |
 | **Game AI** | NPC memory systems, player behavior learning |
-| **Log Analysis** | Incident timeline reconstruction |
+| **IoT/Monitoring** | Sensor data filtering, event prioritization |
 
 ### 🔬 Research / Medical
 
 | Domain | Application |
 |--------|-------------|
-| **PTSD Research** | Intrusive memory pattern analysis |
-| **Depression Research** | Negative memory bias simulation |
-| **ADHD Research** | Attention collapse tracking |
-| **Brain Simulation** | Cognitive loop dynamics modeling |
-
----
-
-## 📁 Project Structure
-
-\`\`\`
-Cognitive_Kernel/
-├── README.md               # This file
-├── examples/
-│   └── integrated_pipeline.py  # 4-engine demo
-├── MemoryRank/             # Importance calculation (PageRank)
-├── Panorama/               # Timeline memory (Binary Search)
-├── PFC/                    # Decision making (Expected Utility)
-└── BasalGanglia/           # Habit learning (Q-Learning)
-\`\`\`
+| **PTSD Research** | Intrusive memory, hyperarousal modeling |
+| **Depression Research** | Energy collapse, negative bias simulation |
+| **ADHD Research** | Attention instability, impulsivity modeling |
+| **Cognitive Science** | Memory network dynamics |
 
 ---
 
@@ -192,18 +187,29 @@ Cognitive_Kernel/
 | OS Kernel | Cognitive Kernel |
 |-----------|------------------|
 | Memory Manager | Panorama + MemoryRank |
-| Process Scheduler | PFC (Attention Controller) |
-| System Call | Inter-engine API |
-| Kernel Panic | Cognitive Collapse (Disorder State) |
+| I/O Controller | Thalamus |
+| Interrupt Handler | Amygdala |
+| Power Manager | Hypothalamus |
+| Process Scheduler | PFC |
+| System Call | BasalGanglia |
 
-### Core Algorithms
+---
 
-| Module | Algorithm |
-|--------|-----------|
-| MemoryRank | Personalized PageRank |
-| Panorama | Binary Search + Exponential Decay |
-| PFC | Expected Utility + Softmax Selection |
-| BasalGanglia | Q-Learning + Dopamine Modulation |
+## 📁 Project Structure
+
+\`\`\`
+Cognitive_Kernel/
+├── README.md                   # This file
+├── examples/
+│   └── integrated_pipeline.py  # Full demo
+├── Thalamus/                   # Sensory gating
+├── Amygdala/                   # Emotion processing
+├── Hypothalamus/               # Homeostasis
+├── Panorama/                   # Timeline memory
+├── MemoryRank/                 # Importance ranking
+├── PFC/                        # Decision making
+└── BasalGanglia/               # Habit learning
+\`\`\`
 
 ---
 
@@ -219,8 +225,11 @@ All core modules are signed with **PHAM (Proof of Honest Authorship & Merit)** b
 
 | Module | Signature |
 |--------|-----------|
-| MemoryRank | ✅ Signed |
+| Thalamus | ✅ Signed |
+| Amygdala | ✅ Signed |
+| Hypothalamus | ✅ Signed |
 | Panorama | ✅ Signed |
+| MemoryRank | ✅ Signed |
 | PFC | ✅ Signed |
 | BasalGanglia | ✅ Signed |
 

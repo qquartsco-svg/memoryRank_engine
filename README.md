@@ -67,6 +67,193 @@
 
 ---
 
+## 🔧 엔지니어링 관점
+
+### 아키텍처 설계 원칙
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                    Cognitive Kernel Architecture                     │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  [Input Layer]                                                      │
+│     │                                                               │
+│     ▼                                                               │
+│  ┌─────────────────────────────────────────────────────────────┐   │
+│  │  Thalamus (Gateway)                                          │   │
+│  │  - Input validation & filtering                              │   │
+│  │  - Rate limiting (max_channels)                              │   │
+│  └─────────────────────────────────────────────────────────────┘   │
+│     │                                                               │
+│     ▼                                                               │
+│  ┌─────────────────────────────────────────────────────────────┐   │
+│  │  Processing Layer                                            │   │
+│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐          │   │
+│  │  │  Amygdala   │  │ Hypothalamus│  │  Panorama   │          │   │
+│  │  │  (Tagging)  │  │  (State)    │  │  (Storage)  │          │   │
+│  │  └─────────────┘  └─────────────┘  └─────────────┘          │   │
+│  └─────────────────────────────────────────────────────────────┘   │
+│     │                                                               │
+│     ▼                                                               │
+│  ┌─────────────────────────────────────────────────────────────┐   │
+│  │  Decision Layer                                              │   │
+│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐          │   │
+│  │  │ MemoryRank  │→ │    PFC      │→ │BasalGanglia │          │   │
+│  │  │  (Ranking)  │  │ (Decision)  │  │  (Action)   │          │   │
+│  │  └─────────────┘  └─────────────┘  └─────────────┘          │   │
+│  └─────────────────────────────────────────────────────────────┘   │
+│     │                                                               │
+│     ▼                                                               │
+│  [Output: Action / Response]                                        │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### 프로그래밍 패턴
+
+| 패턴 | 적용 모듈 | 설명 |
+|------|----------|------|
+| **Strategy** | PFC | 행동 선택 알고리즘 교체 가능 |
+| **Observer** | Hypothalamus | 상태 변화 감지 및 알림 |
+| **Pipeline** | 전체 | 모듈 간 데이터 흐름 |
+| **State Machine** | BasalGanglia | 습관 상태 전이 |
+| **Factory** | Config 클래스 | 설정 기반 인스턴스 생성 |
+
+### 코드 통합 예시
+
+```python
+# 1. 개별 모듈 사용
+from memoryrank import MemoryRankEngine, MemoryRankConfig
+from pfc import PFCEngine, Action
+
+# 메모리 중요도 계산
+memory_engine = MemoryRankEngine(MemoryRankConfig(damping=0.85))
+memory_engine.build_graph(edges, node_attributes)
+top_memories = memory_engine.get_top_memories(k=5)
+
+# PFC에 전달하여 의사결정
+pfc = PFCEngine()
+pfc.load_from_memoryrank(top_memories)
+action, inhibited, probs = pfc.process(
+    top_memories=top_memories,
+    candidate_actions=[Action(id="1", name="respond", expected_reward=0.8)],
+    current_context_conflict_signal=0.2
+)
+
+# 2. 파이프라인 통합
+from examples.integrated_pipeline import CognitiveKernel
+
+kernel = CognitiveKernel()
+result = kernel.process_event(
+    event_type="user_query",
+    content="중요한 질문입니다",
+    context={"urgency": 0.8}
+)
+```
+
+### API 설계 원칙
+
+```python
+# 모든 엔진은 동일한 인터페이스 패턴을 따름
+class EngineInterface:
+    def __init__(self, config: Optional[Config] = None): ...
+    def process(self, input_data) -> Dict: ...        # 단일 처리
+    def update(self, dt: float = 0.1) -> None: ...    # 시간 경과
+    def get_state(self) -> Dict: ...                  # 상태 조회
+    def reset(self) -> None: ...                      # 초기화
+```
+
+---
+
+## 🏭 산업 활용 시나리오
+
+### AI 에이전트 / 챗봇
+
+| 문제 | Cognitive Kernel 해결책 |
+|------|------------------------|
+| 대화 맥락 유실 | **Panorama**: 시간순 대화 기록 + 에피소드 분할 |
+| 중요 정보 누락 | **MemoryRank**: 연결 기반 중요도 순위 |
+| 일관성 없는 응답 | **PFC**: 작업 기억 기반 컨텍스트 유지 |
+| 반복 질문 학습 | **BasalGanglia**: 자주 묻는 질문 패턴 자동화 |
+
+```python
+# 챗봇 통합 예시
+class CognitiveAgent:
+    def __init__(self):
+        self.panorama = PanoramaMemoryEngine()
+        self.memory_rank = MemoryRankEngine()
+        self.pfc = PFCEngine()
+    
+    def respond(self, user_input: str) -> str:
+        # 1. 대화 기록
+        self.panorama.append_event(time.time(), "user", {"text": user_input})
+        
+        # 2. 관련 기억 검색
+        relevant = self.memory_rank.get_top_memories(k=5)
+        
+        # 3. 응답 결정
+        self.pfc.load_from_memoryrank(relevant)
+        action = self.pfc.select_action(candidate_responses)
+        
+        return action.name
+```
+
+### 추천 시스템
+
+| 기존 방식 | Cognitive Kernel 접근 |
+|----------|----------------------|
+| 협업 필터링 | **MemoryRank**: 아이템 연결 그래프 중요도 |
+| 콘텐츠 기반 | **Amygdala**: 감정/선호도 태깅 |
+| 세션 기반 | **Panorama**: 시간축 행동 패턴 |
+| 강화 학습 | **BasalGanglia**: TD-Learning 기반 선호 학습 |
+
+### 게임 AI / NPC
+
+| 기능 | 적용 모듈 | 효과 |
+|------|----------|------|
+| **장기 기억** | Panorama + MemoryRank | NPC가 플레이어와의 과거 상호작용 기억 |
+| **감정 반응** | Amygdala | 상황에 따른 감정 표현 |
+| **피로/욕구** | Hypothalamus | 자연스러운 행동 동기 |
+| **습관 형성** | BasalGanglia | 반복 행동 자동화 |
+| **의사결정** | PFC | 목표 기반 행동 선택 |
+
+### IoT / 스마트 시스템
+
+```
+센서 데이터 → Thalamus (필터링) → Panorama (기록) → MemoryRank (이상 탐지)
+                                                          ↓
+                                         BasalGanglia (자동 대응) ← PFC (판단)
+```
+
+| 응용 | 설명 |
+|------|------|
+| **스마트홈** | 사용자 패턴 학습, 자동 환경 조절 |
+| **산업 모니터링** | 이상 징후 감지, 우선순위 알림 |
+| **헬스케어** | 생체 신호 패턴 분석, 이상 상태 예측 |
+
+### 확장 가능한 통합
+
+```python
+# 기존 시스템에 플러그인 방식으로 통합
+class YourExistingSystem:
+    def __init__(self):
+        # Cognitive Kernel 모듈만 선택적 사용
+        self.memory = MemoryRankEngine()  # 중요도 계산만 사용
+        self.state = HypothalamusEngine()  # 상태 관리만 사용
+    
+    def process(self, data):
+        # 기존 로직에 인지 기능 추가
+        importance = self.memory.calculate_importance()
+        energy = self.state.get_energy_state()
+        
+        if energy['is_critical']:
+            return self.low_power_mode(data)
+        else:
+            return self.full_processing(data, importance)
+```
+
+---
+
 ## 🔬 연구 활용 예시
 
 이 프레임워크를 통해 다음과 같은 질문을 탐구할 수 있습니다:
@@ -220,6 +407,193 @@ Each module abstracts specific functions of brain regions. Their roles may be in
 ### 📚 Theoretical Foundation
 
 Mathematical models and neuroscience references for each module can be found in [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md).
+
+---
+
+## 🔧 Engineering Perspective
+
+### Architecture Design Principles
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                    Cognitive Kernel Architecture                     │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  [Input Layer]                                                      │
+│     │                                                               │
+│     ▼                                                               │
+│  ┌─────────────────────────────────────────────────────────────┐   │
+│  │  Thalamus (Gateway)                                          │   │
+│  │  - Input validation & filtering                              │   │
+│  │  - Rate limiting (max_channels)                              │   │
+│  └─────────────────────────────────────────────────────────────┘   │
+│     │                                                               │
+│     ▼                                                               │
+│  ┌─────────────────────────────────────────────────────────────┐   │
+│  │  Processing Layer                                            │   │
+│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐          │   │
+│  │  │  Amygdala   │  │ Hypothalamus│  │  Panorama   │          │   │
+│  │  │  (Tagging)  │  │  (State)    │  │  (Storage)  │          │   │
+│  │  └─────────────┘  └─────────────┘  └─────────────┘          │   │
+│  └─────────────────────────────────────────────────────────────┘   │
+│     │                                                               │
+│     ▼                                                               │
+│  ┌─────────────────────────────────────────────────────────────┐   │
+│  │  Decision Layer                                              │   │
+│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐          │   │
+│  │  │ MemoryRank  │→ │    PFC      │→ │BasalGanglia │          │   │
+│  │  │  (Ranking)  │  │ (Decision)  │  │  (Action)   │          │   │
+│  │  └─────────────┘  └─────────────┘  └─────────────┘          │   │
+│  └─────────────────────────────────────────────────────────────┘   │
+│     │                                                               │
+│     ▼                                                               │
+│  [Output: Action / Response]                                        │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### Programming Patterns
+
+| Pattern | Applied Module | Description |
+|---------|---------------|-------------|
+| **Strategy** | PFC | Swappable action selection algorithms |
+| **Observer** | Hypothalamus | State change detection & notification |
+| **Pipeline** | All | Data flow between modules |
+| **State Machine** | BasalGanglia | Habit state transitions |
+| **Factory** | Config classes | Configuration-based instance creation |
+
+### Code Integration Example
+
+```python
+# 1. Individual module usage
+from memoryrank import MemoryRankEngine, MemoryRankConfig
+from pfc import PFCEngine, Action
+
+# Calculate memory importance
+memory_engine = MemoryRankEngine(MemoryRankConfig(damping=0.85))
+memory_engine.build_graph(edges, node_attributes)
+top_memories = memory_engine.get_top_memories(k=5)
+
+# Pass to PFC for decision making
+pfc = PFCEngine()
+pfc.load_from_memoryrank(top_memories)
+action, inhibited, probs = pfc.process(
+    top_memories=top_memories,
+    candidate_actions=[Action(id="1", name="respond", expected_reward=0.8)],
+    current_context_conflict_signal=0.2
+)
+
+# 2. Pipeline integration
+from examples.integrated_pipeline import CognitiveKernel
+
+kernel = CognitiveKernel()
+result = kernel.process_event(
+    event_type="user_query",
+    content="Important question",
+    context={"urgency": 0.8}
+)
+```
+
+### API Design Principles
+
+```python
+# All engines follow the same interface pattern
+class EngineInterface:
+    def __init__(self, config: Optional[Config] = None): ...
+    def process(self, input_data) -> Dict: ...        # Single processing
+    def update(self, dt: float = 0.1) -> None: ...    # Time progression
+    def get_state(self) -> Dict: ...                  # State query
+    def reset(self) -> None: ...                      # Reset
+```
+
+---
+
+## 🏭 Industrial Application Scenarios
+
+### AI Agents / Chatbots
+
+| Problem | Cognitive Kernel Solution |
+|---------|--------------------------|
+| Lost conversation context | **Panorama**: Chronological dialogue + episode segmentation |
+| Missing important info | **MemoryRank**: Connection-based importance ranking |
+| Inconsistent responses | **PFC**: Working memory-based context maintenance |
+| Learning repeated queries | **BasalGanglia**: FAQ pattern automation |
+
+```python
+# Chatbot integration example
+class CognitiveAgent:
+    def __init__(self):
+        self.panorama = PanoramaMemoryEngine()
+        self.memory_rank = MemoryRankEngine()
+        self.pfc = PFCEngine()
+    
+    def respond(self, user_input: str) -> str:
+        # 1. Record conversation
+        self.panorama.append_event(time.time(), "user", {"text": user_input})
+        
+        # 2. Search relevant memories
+        relevant = self.memory_rank.get_top_memories(k=5)
+        
+        # 3. Decide response
+        self.pfc.load_from_memoryrank(relevant)
+        action = self.pfc.select_action(candidate_responses)
+        
+        return action.name
+```
+
+### Recommendation Systems
+
+| Traditional Approach | Cognitive Kernel Approach |
+|---------------------|--------------------------|
+| Collaborative filtering | **MemoryRank**: Item graph importance |
+| Content-based | **Amygdala**: Emotion/preference tagging |
+| Session-based | **Panorama**: Timeline behavior patterns |
+| Reinforcement learning | **BasalGanglia**: TD-Learning preference learning |
+
+### Game AI / NPCs
+
+| Feature | Applied Module | Effect |
+|---------|---------------|--------|
+| **Long-term memory** | Panorama + MemoryRank | NPC remembers past player interactions |
+| **Emotional reactions** | Amygdala | Context-appropriate emotional expressions |
+| **Fatigue/Needs** | Hypothalamus | Natural behavior motivation |
+| **Habit formation** | BasalGanglia | Repeated behavior automation |
+| **Decision making** | PFC | Goal-based action selection |
+
+### IoT / Smart Systems
+
+```
+Sensor data → Thalamus (filter) → Panorama (record) → MemoryRank (anomaly detection)
+                                                              ↓
+                                         BasalGanglia (auto-response) ← PFC (judgment)
+```
+
+| Application | Description |
+|-------------|-------------|
+| **Smart Home** | User pattern learning, automatic environment control |
+| **Industrial Monitoring** | Anomaly detection, priority alerting |
+| **Healthcare** | Biosignal pattern analysis, abnormal state prediction |
+
+### Extensible Integration
+
+```python
+# Plug-in style integration with existing systems
+class YourExistingSystem:
+    def __init__(self):
+        # Selectively use Cognitive Kernel modules
+        self.memory = MemoryRankEngine()   # Use only importance calculation
+        self.state = HypothalamusEngine()  # Use only state management
+    
+    def process(self, data):
+        # Add cognitive features to existing logic
+        importance = self.memory.calculate_importance()
+        energy = self.state.get_energy_state()
+        
+        if energy['is_critical']:
+            return self.low_power_mode(data)
+        else:
+            return self.full_processing(data, importance)
+```
 
 ---
 

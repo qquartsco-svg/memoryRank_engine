@@ -2,7 +2,9 @@
 
 > **🇰🇷 한국어** | [🇺🇸 English](#english-version)
 
-**모듈형 인지 프레임워크** — 기억, 주의력, 감정의 동역학을 탐구하기 위한 시뮬레이션 도구
+**Minimal, verifiable implementation of persistent long-term memory for AI agents.**
+
+기억의 시간 인코딩(Temporal Encoding), 중요도 랭킹(Importance Ranking), 의사결정 반영(Decision Impact)을 결합한 모듈형 인지 프레임워크.
 
 ---
 
@@ -15,6 +17,10 @@ Cognitive Kernel은 이 갭을 메우기 위한 **drop-in 인지 서브시스템
 ```
 ⚠️ 연구 및 실험 도구입니다.
    실제 뇌의 완전한 모델이 아니며, 임상 진단 도구가 아닙니다.
+
+📌 This project does not claim biological equivalence to human memory.
+   It provides a computer-science definition of long-term memory:
+   persistent, structured, recallable, and decision-impacting.
 ```
 
 ---
@@ -276,7 +282,9 @@ MIT License — 자유롭게 사용, 수정, 배포 가능
 
 > [🇰🇷 한국어](#-cognitive-kernel) | **🇺🇸 English**
 
-**Modular Cognitive Framework** — A simulation tool for exploring dynamics of memory, attention, and emotion
+**Minimal, verifiable implementation of persistent long-term memory for AI agents.**
+
+A modular cognitive framework combining Temporal Encoding, Importance Ranking, and Decision Impact.
 
 ---
 
@@ -289,6 +297,10 @@ Cognitive Kernel provides **drop-in cognitive subsystems** to address this gap.
 ```
 ⚠️ Research and experimentation tool.
    NOT a complete model of the brain, nor a clinical diagnostic tool.
+
+📌 This project does not claim biological equivalence to human memory.
+   It provides a computer-science definition of long-term memory:
+   persistent, structured, recallable, and decision-impacting.
 ```
 
 ---

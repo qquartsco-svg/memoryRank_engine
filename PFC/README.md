@@ -171,3 +171,115 @@ MIT License
 | Author | GNJz (Qquarts) |
 | Date | 2025-01-29 |
 | Version | v1.0.0 |
+
+---
+
+---
+
+# English Version
+
+> [🇰🇷 한국어](#pfc-engine-prefrontal-cortex) | **🇺🇸 English**
+
+> **"What to remember, how to act"** — Working memory + Action selection + Inhibition engine
+
+---
+
+## 🎬 Role in Memory Theater
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    🧠 Cognitive Kernel                       │
+├─────────────────────────────────────────────────────────────┤
+│   🎞️ Panorama (Film)     →   "What happened?"               │
+│   💡 MemoryRank (Dimmer)  →   "What matters?"                │
+│   🎬 PFC (Director)       →   "What to do?" ← This Engine   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Core Features (v1.0)
+
+| Feature | Description | Formula |
+|---------|-------------|---------|
+| **Working Memory** | Store important info temporarily (Miller's Law: 7±2) | Capacity eviction |
+| **Action Evaluator** | Calculate expected utility | U = r - c - risk×κ |
+| **Inhibitor** | Suppress risky actions (Go/No-Go) | conflict > threshold |
+| **Selector** | Softmax probabilistic selection | P(i) = exp(βU_i) / Σexp(βU_j) |
+
+---
+
+## 🚀 Quick Start
+
+```python
+from pfc import PFCEngine, PFCConfig, Action
+
+pfc = PFCEngine(PFCConfig(
+    working_memory_capacity=7,
+    risk_aversion=0.5,
+    inhibition_threshold=0.7,
+))
+
+# Load from MemoryRank
+pfc.load_from_memoryrank([("mem_001", 0.45), ("mem_002", 0.30)])
+
+# Define action candidates
+actions = [
+    Action.create("rest", reward=0.7, cost=0.1, risk=0.05),
+    Action.create("work", reward=0.8, cost=0.5, risk=0.2),
+]
+
+# Select action
+result = pfc.select_action(actions)
+print(f"Selected: {result.action.name}, Utility: {result.utility:.3f}")
+```
+
+---
+
+## 🔬 Algorithm Details
+
+### Expected Utility
+
+```
+U(action) = expected_reward - effort_cost - risk × risk_aversion
+```
+
+### Softmax Selection
+
+```
+P(action_i) = exp(β × U_i) / Σ exp(β × U_j)
+β = decision_temperature
+```
+
+### Working Memory Decay
+
+```
+relevance(t) = relevance_0 × exp(-λ × Δt)
+```
+
+---
+
+## 🎯 Use Cases
+
+| Domain | Application |
+|--------|-------------|
+| **AI Agents** | Maintain conversation context, make decisions |
+| **ADHD Simulation** | Reduced working memory, weakened inhibition |
+| **Depression Simulation** | Distorted action utility, lethargy |
+| **Game NPC** | Goal-based action selection |
+
+---
+
+## 📄 License
+
+MIT License
+
+---
+
+## ✅ PHAM Blockchain Signature
+
+Signed with **PHAM (Proof of Honest Authorship & Merit)**.
+
+---
+
+**Author**: GNJz (Qquarts)

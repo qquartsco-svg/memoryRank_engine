@@ -205,3 +205,126 @@ v_i = b_i / Σ_j b_j
 
 **Author**: GNJz (Qquarts)  
 **Repository**: [github.com/qquartsco-svg/memoryRank_engine](https://github.com/qquartsco-svg/memoryRank_engine)
+
+---
+
+---
+
+# English Version
+
+> [🇰🇷 한국어](#memoryrank-engine) | **🇺🇸 English**
+
+> **Ranking engine that finds "what matters most" in connected data**
+
+MemoryRank applies Google's **PageRank algorithm** to memory/knowledge/document graphs.  
+It calculates **importance scores** by combining node connections + recency/emotion/frequency, and extracts the top N items.
+
+---
+
+## 🎯 Problems This Solves
+
+| Situation | What MemoryRank Does |
+|-----------|---------------------|
+| Want only the **top 10 key documents** from thousands | Build a reference graph and sort by importance |
+| Search results too many, want only **truly important ones** | Re-rank by multiplying MemoryRank scores |
+| Find the **most influential event** in user logs | Build event chain graph, detect key nodes |
+| Analyze **intrusive memory patterns** in PTSD patients | Calculate importance of trauma-related memories |
+| Select **key items** in recommendation systems | Extract high-influence nodes from item relation graph |
+
+---
+
+## 🚀 Quick Start
+
+```bash
+git clone https://github.com/qquartsco-svg/Cognitive_Kernel.git
+cd Cognitive_Kernel/MemoryRank
+pip install numpy
+python test_memoryrank_engine.py
+```
+
+### Code Example
+
+```python
+from package.memoryrank import MemoryRankEngine, MemoryRankConfig, MemoryNodeAttributes
+
+edges = [
+    ("DocA", "DocB", 1.0),
+    ("DocB", "DocC", 1.0),
+    ("DocC", "DocA", 0.5),
+]
+
+node_attrs = {
+    "DocA": MemoryNodeAttributes(recency=0.3, emotion=0.4),
+    "DocB": MemoryNodeAttributes(recency=0.5, emotion=0.5),
+    "DocC": MemoryNodeAttributes(recency=0.9, emotion=0.9),  # Recent + Important
+}
+
+engine = MemoryRankEngine(MemoryRankConfig())
+engine.build_graph(edges, node_attrs)
+top = engine.get_top_memories(3)
+print(top)  # [('DocC', 0.39), ('DocB', 0.32), ('DocA', 0.29)]
+```
+
+---
+
+## 💡 Use Cases
+
+### Industry / Commercial
+
+| Domain | Application |
+|--------|-------------|
+| **Search Engines** | After keyword matching, show only "truly important" results |
+| **Recommendation** | User click/purchase logs → Graph → Key item recommendations |
+| **Content Curation** | Auto-select "most influential" news/blogs/videos |
+| **Log Analysis** | Detect key events causing service/IoT failures |
+
+### Research
+
+| Domain | Application |
+|--------|-------------|
+| **PTSD Research** | Score "intrusion potential" of trauma memories |
+| **Depression Research** | Analyze "rumination loop entry probability" |
+| **ADHD Research** | Predict key nodes where attention resources concentrate |
+| **Cognitive Science** | Study how memory structure changes affect "key memory sets" |
+
+---
+
+## 🔬 Algorithm (Google PageRank Based)
+
+### Core Idea
+
+> "A node referenced by many important nodes is more important"
+
+### Mathematical Definition
+
+**PageRank Update:**
+
+```
+r^{(t+1)} = α M r^{(t)} + (1 - α) v
+```
+
+- `M`: Transition matrix (column-normalized)
+- `α`: Damping factor (default 0.85)
+- `v`: Personalization vector (reflects recency/emotion/frequency)
+- `r`: Rank vector (importance of each node)
+
+---
+
+## 📄 License
+
+MIT License
+
+---
+
+## ✅ PHAM Blockchain Signature
+
+This engine is signed with **PHAM (Proof of Honest Authorship & Merit)**.
+
+| File | SHA-256 | Score |
+|------|---------|-------|
+| memoryrank_engine.py | 696d8760... | ⭐ A_HIGH |
+| README.md | 1d4a9893... | ⭐ A_HIGH |
+
+---
+
+**Author**: GNJz (Qquarts)

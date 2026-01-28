@@ -245,3 +245,101 @@ MIT License
 | config.py | 4b00506884f3f3e4aed56400aa5e5914310e3e6357d54ef2620ea69483ce0f8b |
 
 > PHAM 서명 완료. 파일 무결성 검증: shasum -a 256 package/panorama/*.py
+
+---
+
+---
+
+# English Version
+
+> [🇰🇷 한국어](#panorama-memory-engine) | **🇺🇸 English**
+
+> **"When, what, in what order?"** — Timeline-based episodic memory engine
+
+---
+
+## 🎬 The Memory Theater Metaphor
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    🧠 Memory Theater                         │
+├─────────────────────────────────────────────────────────────┤
+│   📽️ Panorama (Film)                                        │
+│   ├─ Records every moment in chronological order            │
+│   ├─ "What happened then?" → Rewind/fast-forward film       │
+│   └─ Does not judge, just exists in recorded order          │
+│                         ↓                                   │
+│   💡 MemoryRank (Dimmer + Editor)                            │
+│   └─ Decides which of the 10,000 frames to illuminate       │
+│                         ↓                                   │
+│   🎬 PFC (Projector + Director)                              │
+│   └─ Projects illuminated film to screen, decides next shot │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 🚀 Quick Start
+
+```python
+from panorama import PanoramaMemoryEngine, PanoramaConfig
+
+engine = PanoramaMemoryEngine(PanoramaConfig(time_gap_threshold=1800))
+
+import time
+t = time.time()
+engine.append_event(t, "user_action", {"action": "click"})
+engine.append_event(t + 5, "state_change", {"state": "loading"})
+
+# Range query (rewind/fast-forward)
+events = engine.query_range(t, t + 60)
+
+# Episode segmentation
+episodes = engine.segment_episodes()
+```
+
+---
+
+## 📖 API Reference
+
+| Method | Description | Complexity |
+|--------|-------------|------------|
+| append_event() | Add event (record new frame) | O(log n) |
+| query_range() | Query events in time range | O(log n + k) |
+| get_episode() | Get specific episode events | O(k log k) |
+| get_recent(n) | Get recent n events | O(n) |
+| segment_episodes() | Auto-segment into episodes | O(n) |
+| get_importance_scores() | Exponential decay importance | O(n) |
+
+---
+
+## 🔬 Algorithm Details
+
+### Episode Segmentation (Time Gap)
+
+```
+New episode condition: t_i - t_{i-1} > τ
+```
+
+### Exponential Decay
+
+```
+importance(t) = base_importance × exp(-λ × Δt)
+λ = ln(2) / half_life
+```
+
+---
+
+## 📄 License
+
+MIT License
+
+---
+
+## ✅ PHAM Blockchain Signature
+
+Signed with **PHAM (Proof of Honest Authorship & Merit)**.
+
+---
+
+**Author**: GNJz (Qquarts)

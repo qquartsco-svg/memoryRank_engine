@@ -313,3 +313,100 @@ MIT License
 
 문의사항이 있으시면 GitHub Issues를 통해 연락해 주세요.
 
+
+---
+
+---
+
+# English Version
+
+> [🇰🇷 한국어](#basal-ganglia-engine-기저핵-엔진) | **🇺🇸 English**
+
+> **Action selection and habit formation system** — Q-Learning based behavioral automation engine
+
+---
+
+## 📋 Overview
+
+**Basal Ganglia Engine** is a software engine for industrial-grade action selection and habit formation systems. It mimics the biological basal ganglia's functions: action selection (Go/NoGo), habit formation, and reward-based learning.
+
+### Core Features
+
+- ✅ **Action Selection**: Choose optimal action among multiple options (Go/NoGo/Explore)
+- ✅ **Habit Formation**: Automation of repeated actions (Fast Path)
+- ✅ **Reward Learning**: Q-learning based reinforcement learning (TD-Learning)
+- ✅ **Dopamine Integration**: Dopamine signal-based learning rate modulation
+- ✅ **Exploration-Exploitation Balance**: Softmax-based probabilistic selection
+
+---
+
+## 🚀 Quick Start
+
+```python
+from basal_ganglia import BasalGangliaEngine, BasalGangliaConfig
+
+bg = BasalGangliaEngine(BasalGangliaConfig(
+    alpha=0.1,      # Learning rate
+    gamma=0.9,      # Discount factor
+    tau=0.5,        # Softmax temperature
+))
+
+# Learn from experience
+bg.learn(context="stressed_at_work", action_name="take_break", reward=0.8)
+bg.learn(context="stressed_at_work", action_name="take_break", reward=0.7)
+
+# Select action based on learned Q-values
+result = bg.select_action("stressed_at_work", ["take_break", "work_more", "exercise"])
+print(f"Selected: {result.action.name}")
+```
+
+---
+
+## 🔬 Algorithm Details
+
+### Q-Learning Update
+
+```
+Q(s,a) ← Q(s,a) + α[R + γ·max(Q(s',a')) - Q(s,a)]
+```
+
+### Softmax Action Selection
+
+```
+P(a) = exp(Q(s,a) / τ) / Σ exp(Q(s,a') / τ)
+```
+
+### Habit Strength
+
+```
+H = H + β·(success - H)
+```
+
+---
+
+## 🎯 Use Cases
+
+| Domain | Application |
+|--------|-------------|
+| **Robot Control** | Optimal action selection, task automation |
+| **Game AI** | NPC behavior, habit-driven character patterns |
+| **Autonomous Systems** | Multi-option decision making, reward-based optimization |
+| **Brain Simulation** | ADHD (impulsivity), habit disorder modeling |
+
+---
+
+## 📄 License
+
+MIT License
+
+---
+
+## ✅ PHAM Blockchain Signature
+
+Signed with **PHAM (Proof of Honest Authorship & Merit)**.
+
+See `BLOCKCHAIN_INFO.md` for details.
+
+---
+
+**Author**: GNJz (Qquarts)

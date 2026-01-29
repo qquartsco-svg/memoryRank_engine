@@ -1,10 +1,22 @@
 # 🧠 Cognitive Kernel
 
+[![PyPI version](https://badge.fury.io/py/cognitive-kernel.svg)](https://pypi.org/project/cognitive-kernel/)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 > **🇰🇷 한국어** | [🇺🇸 English](#english-version)
 
-**Minimal, verifiable implementation of persistent long-term memory for AI agents.**
+## **Give your AI agent persistent memory. 3 lines of code.**
 
-기억의 시간 인코딩(Temporal Encoding), 중요도 랭킹(Importance Ranking), 의사결정 반영(Decision Impact)을 결합한 모듈형 인지 프레임워크.
+기억의 시간 인코딩, 중요도 랭킹, 의사결정 반영을 결합한 모듈형 인지 프레임워크.
+
+---
+
+## 📦 Installation
+
+```bash
+pip install cognitive-kernel
+```
 
 ---
 
@@ -282,7 +294,13 @@ MIT License — 자유롭게 사용, 수정, 배포 가능
 
 > [🇰🇷 한국어](#-cognitive-kernel) | **🇺🇸 English**
 
-**Minimal, verifiable implementation of persistent long-term memory for AI agents.**
+## **Give your AI agent persistent memory. 3 lines of code.**
+
+## 📦 Installation
+
+```bash
+pip install cognitive-kernel
+```
 
 A modular cognitive framework combining Temporal Encoding, Importance Ranking, and Decision Impact.
 

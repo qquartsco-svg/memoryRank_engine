@@ -20,6 +20,31 @@ pip install cognitive-kernel
 
 ---
 
+## 🔗 LangChain Integration (NEW!)
+
+```python
+from cognitive_kernel import CognitiveKernel
+
+# Your LLM agent now has persistent, ranked memory
+with CognitiveKernel("my_agent") as memory:
+    memory.remember("user_preference", {"likes": "morning meetings"})
+    
+    # Next day (new process) - agent still remembers!
+    recalled = memory.recall(k=5)  # PageRank-ranked memories
+```
+
+**Before vs After:**
+
+| Feature | Standard Memory | Cognitive Kernel |
+|---------|----------------|------------------|
+| Persistence | ❌ Lost on restart | ✅ Survives forever |
+| Importance | ❌ FIFO buffer | ✅ PageRank ranking |
+| Time Decay | ❌ None | ✅ Ebbinghaus curve |
+
+→ [Full LangChain Example](./examples/langchain_memory.py)
+
+---
+
 ## 🎯 왜 지금 필요한가?
 
 **현대 LLM 에이전트에는 구조화된 장기 기억과 실행 제어 기능이 부족합니다.**
@@ -302,7 +327,30 @@ MIT License — 자유롭게 사용, 수정, 배포 가능
 pip install cognitive-kernel
 ```
 
-A modular cognitive framework combining Temporal Encoding, Importance Ranking, and Decision Impact.
+---
+
+## 🔗 LangChain Integration (NEW!)
+
+```python
+from cognitive_kernel import CognitiveKernel
+
+# Your LLM agent now has persistent, ranked memory
+with CognitiveKernel("my_agent") as memory:
+    memory.remember("user_preference", {"likes": "morning meetings"})
+    
+    # Next day (new process) - agent still remembers!
+    recalled = memory.recall(k=5)  # PageRank-ranked memories
+```
+
+**Before vs After:**
+
+| Feature | Standard Memory | Cognitive Kernel |
+|---------|----------------|------------------|
+| Persistence | ❌ Lost on restart | ✅ Survives forever |
+| Importance | ❌ FIFO buffer | ✅ PageRank ranking |
+| Time Decay | ❌ None | ✅ Ebbinghaus curve |
+
+→ [Full LangChain Example](./examples/langchain_memory.py)
 
 ---
 

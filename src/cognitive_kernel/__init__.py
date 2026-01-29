@@ -46,6 +46,14 @@ from .engines import (
     BasalGangliaConfig,
 )
 
+# Vector DB 통합 (선택적)
+try:
+    from .vector_integration import VectorDBBackend
+    VECTOR_DB_AVAILABLE = True
+except ImportError:
+    VECTOR_DB_AVAILABLE = False
+    VectorDBBackend = None
+
 __all__ = [
     # 메인 클래스
     "CognitiveKernel",
@@ -65,5 +73,8 @@ __all__ = [
     "Action",
     "BasalGangliaEngine",
     "BasalGangliaConfig",
+    # Vector DB
+    "VectorDBBackend",
+    "VECTOR_DB_AVAILABLE",
 ]
 

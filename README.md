@@ -45,6 +45,64 @@ with CognitiveKernel("my_agent") as memory:
 
 ---
 
+## 🔗 Vector DB Integration (NEW!)
+
+**의미 기억(Semantic Memory)을 Vector DB에 저장하고, Cognitive Kernel로 중요도 재랭킹**
+
+```python
+from cognitive_kernel import CognitiveKernel, VectorDBBackend
+
+# Vector DB 백엔드 초기화
+vector_backend = VectorDBBackend(
+    backend_type="chroma",
+    path="./chroma_db",
+    collection_name="cognitive_memory"
+)
+
+# Cognitive Kernel과 함께 사용
+kernel = CognitiveKernel("my_agent")
+
+# 기억 저장 (Vector DB + Cognitive Kernel)
+memory_id = kernel.remember("preference", {"text": "I like coffee"})
+vector_backend.add_memory(memory_id, "I like coffee", metadata={})
+
+# Semantic Search (Vector DB)
+results = vector_backend.search("coffee preference", k=5)
+
+# Importance Ranking (MemoryRank)
+ranked = kernel.recall(k=5)  # PageRank-based
+```
+
+**하이브리드 검색 구조:**
+
+```
+[Embedding Model] → [Vector DB (Chroma/FAISS)]  ← Semantic Search
+                            ↓
+                    [MemoryRank]                  ← Importance Re-ranking
+                            ↓
+                    [PFC]                         ← Decision Making
+```
+
+**Before vs After:**
+
+| Feature | Vector DB Only | Vector DB + Cognitive Kernel |
+|---------|----------------|------------------------------|
+| Semantic Search | ✅ | ✅ |
+| Importance Ranking | ❌ | ✅ (PageRank) |
+| Time Decay | ❌ | ✅ (Ebbinghaus) |
+| Hybrid Search | ❌ | ✅ (Combined) |
+
+→ [Full Vector DB Example](./examples/vector_db_chroma.py)
+
+**설치:**
+```bash
+pip install cognitive-kernel chromadb sentence-transformers
+# 또는
+pip install cognitive-kernel[vector]
+```
+
+---
+
 ## 🎯 왜 지금 필요한가?
 
 **현대 LLM 에이전트에는 구조화된 장기 기억과 실행 제어 기능이 부족합니다.**
@@ -351,6 +409,64 @@ with CognitiveKernel("my_agent") as memory:
 | Time Decay | ❌ None | ✅ Ebbinghaus curve |
 
 → [Full LangChain Example](./examples/langchain_memory.py)
+
+---
+
+## 🔗 Vector DB Integration (NEW!)
+
+**Store semantic memory in Vector DB, re-rank by Cognitive Kernel importance**
+
+```python
+from cognitive_kernel import CognitiveKernel, VectorDBBackend
+
+# Initialize Vector DB backend
+vector_backend = VectorDBBackend(
+    backend_type="chroma",
+    path="./chroma_db",
+    collection_name="cognitive_memory"
+)
+
+# Use with Cognitive Kernel
+kernel = CognitiveKernel("my_agent")
+
+# Store memory (Vector DB + Cognitive Kernel)
+memory_id = kernel.remember("preference", {"text": "I like coffee"})
+vector_backend.add_memory(memory_id, "I like coffee", metadata={})
+
+# Semantic Search (Vector DB)
+results = vector_backend.search("coffee preference", k=5)
+
+# Importance Ranking (MemoryRank)
+ranked = kernel.recall(k=5)  # PageRank-based
+```
+
+**Hybrid Search Architecture:**
+
+```
+[Embedding Model] → [Vector DB (Chroma/FAISS)]  ← Semantic Search
+                            ↓
+                    [MemoryRank]                  ← Importance Re-ranking
+                            ↓
+                    [PFC]                         ← Decision Making
+```
+
+**Before vs After:**
+
+| Feature | Vector DB Only | Vector DB + Cognitive Kernel |
+|---------|----------------|------------------------------|
+| Semantic Search | ✅ | ✅ |
+| Importance Ranking | ❌ | ✅ (PageRank) |
+| Time Decay | ❌ | ✅ (Ebbinghaus) |
+| Hybrid Search | ❌ | ✅ (Combined) |
+
+→ [Full Vector DB Example](./examples/vector_db_chroma.py)
+
+**Installation:**
+```bash
+pip install cognitive-kernel chromadb sentence-transformers
+# or
+pip install cognitive-kernel[vector]
+```
 
 ---
 

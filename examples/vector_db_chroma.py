@@ -12,8 +12,7 @@ Usage:
     python examples/vector_db_chroma.py
 """
 
-from cognitive_kernel import CognitiveKernel
-from cognitive_kernel.vector_integration import VectorDBBackend
+from cognitive_kernel import CognitiveKernel, VectorDBBackend
 import json
 from pathlib import Path
 

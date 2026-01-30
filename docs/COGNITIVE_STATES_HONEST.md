@@ -13,10 +13,13 @@
 
 ### ❌ 현재 작동하지 않는 것
 
-1. **ASD 패턴 고착**: MemoryRank 결과가 `decide()`의 action utility에 반영되지 않음
-2. **Thalamus 감각 과부하**: `remember()`는 Thalamus를 거치지 않음
-3. **local_weight_boost**: 개념적 파라미터, 실제 코드에서 사용되지 않음
-4. **기억 기반 의사결정**: `decide()`에서 모든 action의 `expected_reward=0.5` (하드코딩)
+1. **Thalamus 감각 과부하**: `remember()`는 Thalamus를 거치지 않음
+2. **local_weight_boost**: 개념적 파라미터, 실제 코드에서 사용되지 않음
+
+### ✅ v2.0.1에서 구현됨
+
+1. **ASD 패턴 고착**: MemoryRank 결과가 `decide()`의 action utility에 반영됨
+2. **기억 기반 의사결정**: `expected_reward = 0.5 + α · relevance · importance` 구현
 
 ---
 
@@ -56,10 +59,14 @@ tau=0.1                   # 낮은 tau → 착취 강화
 - ❌ MemoryRank 그래프가 의사결정에 반영되지 않음
 
 **결론:**
-> ASD의 "패턴 고착"은 **Softmax 온도 효과**로 선택 수렴이 발생하지만,
-> **"기억 기반 패턴 고착"**은 아직 구현되지 않음.
+> ✅ **v2.0.1에서 구현됨**: MemoryRank 결과가 action utility에 반영됨
 > 
-> 현재 관찰되는 "고착"은 온도 효과 + 우연의 결과.
+> 수식: `expected_reward = 0.5 + α · Σ(importance_i × match_score_i)`
+> - α = 0.5 (기억 영향 계수)
+> - importance_i: MemoryRank 중요도
+> - match_score_i: 옵션 키워드와 기억 내용의 매칭 점수
+> 
+> 이제 "빨간색 기억"이 실제로 `choose_red`의 utility를 높임
 
 ---
 
@@ -86,9 +93,10 @@ def decide(self, options: List[str], ...):
     # → 온도 효과만 작동 (무작위성/결정론성)
 ```
 
-**문제:**
-- MemoryRank 결과가 action utility에 반영되지 않음
-- "빨간색 기억"이 `choose_red`의 효용을 높이지 않음
+**구현 (v2.0.1):**
+- ✅ MemoryRank 결과가 action utility에 반영됨
+- ✅ "빨간색 기억"이 `choose_red`의 효용을 높임
+- ✅ `_calculate_memory_relevance()` 메서드로 옵션-기억 매칭
 
 ---
 
@@ -278,25 +286,30 @@ Note: Thalamus gating is not yet implemented in remember()."
 
 ## 🚀 다음 단계 (선택적)
 
-### 패턴 고착을 "진짜" 만들려면
+### ✅ 패턴 고착 구현 완료 (v2.0.1)
 
 ```python
-# decide() 메서드 수정 필요
+# decide() 메서드 구현됨
 def decide(self, options: List[str], ...):
     memories = self.recall(k=5)
     
     # MemoryRank 결과를 action utility에 반영
     for opt in options:
-        # 옵션 이름과 기억 내용 매칭
-        relevance = self._calculate_relevance(opt, memories)
+        opt_keywords = self._extract_keywords(opt)
+        memory_relevance = self._calculate_memory_relevance(opt_keywords, memories)
+        
+        # U_i = U_base + α · r_i
+        expected_reward = 0.5 + 0.5 * memory_relevance
         actions.append(Action(
-            expected_reward=0.5 + relevance * 0.5,  # 기억 기반 보정
+            expected_reward=expected_reward,  # ✅ 기억 기반 보정
             ...
         ))
 ```
 
-**한 줄 요약:**
-> `expected_reward`를 하드코딩에서 **MemoryRank 결과 기반 계산**으로 변경
+**구현 완료:**
+> ✅ `expected_reward`를 **MemoryRank 결과 기반 계산**으로 변경 완료
+> ✅ 옵션 키워드와 기억 내용 매칭 로직 구현
+> ✅ ASD 패턴 고착이 실제로 작동함
 
 ---
 

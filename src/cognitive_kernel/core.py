@@ -306,14 +306,24 @@ class CognitiveKernel:
         top_memories_tuples = [(m["id"], m["importance"]) for m in memories]
         self.pfc.load_from_memoryrank(top_memories_tuples)
         
-        # Action 생성
+        # Action 생성 (MemoryRank 결과를 utility에 반영)
         actions = []
         for i, opt in enumerate(options):
-            # 기본 효용 (실제로는 더 정교한 계산 필요)
+            # 옵션 이름에서 키워드 추출 (예: "choose_red" → ["red"])
+            opt_keywords = self._extract_keywords(opt)
+            
+            # 기억과의 관련성(relevance) 계산
+            memory_relevance = self._calculate_memory_relevance(opt_keywords, memories)
+            
+            # 기억 기반 보상 보정: U_i = U_base + α · r_i
+            # α: 기억 영향 계수 (0.5 = 기억이 최대 50%까지 보상에 영향)
+            alpha = 0.5
+            expected_reward = 0.5 + alpha * memory_relevance
+            
             actions.append(self._Action(
                 id=f"action_{i}",
                 name=opt,
-                expected_reward=0.5,
+                expected_reward=expected_reward,
                 effort_cost=0.2,
                 risk=0.1,
             ))
@@ -353,6 +363,64 @@ class CognitiveKernel:
         """
         self.basal_ganglia.update(context, action, reward)
         self._is_dirty = True
+    
+    def _extract_keywords(self, option_name: str) -> List[str]:
+        """
+        옵션 이름에서 키워드 추출
+        
+        예: "choose_red" → ["red"]
+            "work_on_project" → ["work", "project"]
+        """
+        # 언더스코어/하이픈으로 분리
+        keywords = []
+        for part in option_name.replace("_", " ").replace("-", " ").split():
+            # "choose", "select", "do" 같은 동사 제거
+            if part.lower() not in ["choose", "select", "do", "pick", "take", "make"]:
+                keywords.append(part.lower())
+        return keywords if keywords else [option_name.lower()]
+    
+    def _calculate_memory_relevance(
+        self,
+        option_keywords: List[str],
+        memories: List[Dict[str, Any]],
+    ) -> float:
+        """
+        옵션과 기억의 관련성 계산
+        
+        수식: relevance = Σ (importance_i × match_score_i)
+        - importance_i: MemoryRank 중요도
+        - match_score_i: 키워드 매칭 점수 (0~1)
+        
+        Returns:
+            관련성 점수 (0~1)
+        """
+        if not memories or not option_keywords:
+            return 0.0
+        
+        total_relevance = 0.0
+        
+        for mem in memories:
+            # 기억 내용을 문자열로 변환
+            content = mem.get("content", {})
+            if isinstance(content, dict):
+                # 딕셔너리면 모든 값들을 문자열로 합침
+                content_text = " ".join(str(v) for v in content.values()).lower()
+            else:
+                content_text = str(content).lower()
+            
+            # 키워드 매칭 점수 계산
+            match_score = 0.0
+            for keyword in option_keywords:
+                if keyword in content_text:
+                    # 키워드가 포함되어 있으면 점수 증가
+                    match_score += 1.0 / len(option_keywords)
+            
+            # 관련성 = 중요도 × 매칭 점수
+            importance = mem.get("importance", 0.0)
+            total_relevance += importance * match_score
+        
+        # 정규화 (0~1 범위로)
+        return min(1.0, total_relevance)
     
     def _rebuild_graph(self):
         """MemoryRank 그래프 재구축"""

@@ -241,7 +241,39 @@ with CognitiveKernel("my_brain") as kernel:
 
 ---
 
-## 📐 핵심 수식
+## 📐 Theory & Dynamics - 이론 및 동역학
+
+> **코드와 1:1로 대응되는 최소 차분 모델**
+
+이 모델은 결정 스텝 $n$에서 회상된 기억의 중요도와 텍스트 매칭을 기반으로 시스템 엔트로피($E_n$)가 결정되는 과정을 정의합니다.
+
+### 상태방정식
+
+$$
+\begin{align}
+C_n(k) &= \min\left(1, \sum_{i} s_i \cdot m_{i,k}\right) \\
+U_{n,k} &= U_0 + \alpha \cdot C_n(k) \\
+P_n(k) &= \frac{\exp(\beta \cdot U_{n,k})}{\sum_j \exp(\beta \cdot U_{n,j})} \\
+E_n &= -\sum_{k} P_n(k) \ln P_n(k)
+\end{align}
+$$
+
+**변수 정의:**
+- $s_i$: recall() 반환 중요도 (MemoryRank score)
+- $m_{i,k} \in [0,1]$: 텍스트 키워드 매칭 (포함 여부 기반)
+- $\beta = \text{decision\_temperature}$: Inverse-temperature
+- $\alpha = 0.5$: 기억 영향 계수
+- $U_0 = 0.5$: 기본 보상
+
+**모드별 동역학:**
+- **ASD (-)**: $\beta \uparrow + \alpha C_n(k) \to U$ 격차 확대 $\to P$ 수렴 $\to E_n \to 0$ (저엔트로피 고착)
+- **ADHD (+)**: $\beta \downarrow \to P$ 평탄화 $\to E_n \to \ln(N)$ (고엔트로피 발산)
+
+→ [상세 수식 문서](./docs/MINIMAL_DYNAMICS_MODEL.md)
+
+---
+
+## 📐 핵심 수식 (상세)
 
 ### 1. 기억 중요도 (MemoryRank)
 

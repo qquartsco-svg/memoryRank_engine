@@ -6,8 +6,11 @@ ADHD와 ASD를 "탐색(Exploration) vs 착취(Exploitation)"의 극단으로 모
 - ADHD: 고엔트로피 (High Entropy) - 계속 시도하고 싶은 욕망 (+)
 - ASD: 저엔트로피 (Low Entropy) - 패턴을 유지하고 싶은 욕망 (-)
 
-수식:
+개념적 수식 (비율 표현):
     Entropy_Control = Exploration(ADHD) / Exploitation(ASD)
+    
+    주의: 이는 개념적 비율 표현이며, 실제 계산되는 수치가 아닙니다.
+    실제 구현은 각 모드의 파라미터 조합으로 동작합니다.
 
 Author: GNJz (Qquarts)
 Version: 2.0.0
@@ -31,21 +34,24 @@ class ModeConfig:
     """모드별 파라미터 설정"""
     
     # Thalamus (입력 필터링)
-    gate_threshold: float = 0.3  # 게이트 임계값 (낮을수록 모든 입력 허용)
-    max_channels: int = 3  # 최대 통과 채널 수
+    gate_threshold: float = 0.3  # 게이트 임계값 θ (0~1, 낮을수록 모든 입력 허용, 높을수록 필터링 강화)
+    max_channels: int = 3  # 최대 통과 채널 수 (주의 자원 제한)
     
     # PFC (의사결정)
-    decision_temperature: float = 1.0  # Softmax 온도 (낮을수록 루틴 고착)
+    decision_temperature: float = 1.0  # Softmax inverse-temperature β (P(i) = exp(β×U_i) / Σexp(β×U_j))
+                                       # β ↑ (temperature ↓) → 효용 차이 강조 (결정론적, 루틴 고착)
+                                       # β ↓ (temperature ↑) → 무작위성 증가 (탐색 강화)
     working_memory_capacity: int = 7
     
     # BasalGanglia (탐색 vs 착취)
-    tau: float = 0.5  # 탐색 온도 (낮을수록 착취 강화)
-    impulsivity: Optional[float] = None  # 충동성
-    patience: Optional[float] = None  # 인내심
+    tau: float = 0.5  # Softmax 온도 τ (P(a) = exp(Q(s,a)/τ) / Σexp(Q(s,a')/τ))
+                     # 낮을수록 높은 Q값 강조 (착취 강화), 높을수록 균등 선택 (탐색 강화)
+    impulsivity: Optional[float] = None  # 충동성 (0~1, 높을수록 탐색↑, 습관 형성↑)
+    patience: Optional[float] = None  # 인내심 (0~1, 높을수록 미래 보상 중시, gamma↑)
     
     # MemoryRank (패턴 연결)
     damping: float = 0.85
-    local_weight_boost: float = 1.0  # 로컬 연결 가중치 부스트
+    local_weight_boost: float = 1.0  # 로컬 연결 가중치 부스트 (개념적 파라미터, 향후 구현)
     
     # Amygdala (감정/위협)
     novelty_sensitivity: float = 1.0  # 신규성 민감도
@@ -110,19 +116,19 @@ class CognitiveModePresets:
         특징:
         - 계속 시도하고 싶은 욕망 (+)
         - 과도한 탐색 (Over-Exploration)
-        - 게이팅 임계값 높음 (산만함)
-        - 온도 높음 (무작위적 의사결정)
+        - 게이팅 임계값 낮음 (산만함) - 낮은 임계값으로 모든 입력 통과
+        - decision_temperature 낮음 (β↓) → 무작위성 증가 (탐색 강화)
         """
         return ModeConfig(
             gate_threshold=0.1,  # 낮은 임계값 → 모든 입력 통과 (산만)
             max_channels=10,  # 많은 채널 동시 처리
-            decision_temperature=2.0,  # 높은 온도 → 탐색 강화
+            decision_temperature=0.5,  # β↓ (temperature↑) → 무작위성 증가 (탐색 강화)
             working_memory_capacity=5,  # 낮은 용량 (집중력 부족)
-            tau=1.5,  # 높은 탐색 온도
+            tau=1.5,  # 높은 tau → 탐색 강화 (Q값 차이 덜 중요)
             impulsivity=0.8,  # 높은 충동성
             patience=0.2,  # 낮은 인내심
             damping=0.85,
-            local_weight_boost=0.8,  # 글로벌 연결 선호
+            local_weight_boost=0.8,  # 글로벌 연결 선호 (개념적, 향후 구현)
             novelty_sensitivity=2.0,  # 높은 신규성 민감도
             stress_baseline=0.4,
         )
@@ -136,19 +142,19 @@ class CognitiveModePresets:
         - 패턴을 유지하고 싶은 욕망 (-)
         - 과도한 착취 (Over-Exploitation)
         - 게이팅 임계값 낮음 (감각 과부하)
-        - 온도 낮음 (루틴 고착)
+        - decision_temperature 높음 (β↑, temperature↓) → 효용 차이 강조 (결정론적, 루틴 고착)
         - 로컬 연결 강화 (패턴 고착)
         """
         return ModeConfig(
             gate_threshold=0.0,  # 모든 미세 자극 통과 (감각 과부하)
             max_channels=1,  # 단일 채널 집중
-            decision_temperature=0.1,  # 매우 낮은 온도 → 루틴 고착
+            decision_temperature=5.0,  # β↑ (temperature↓) → 효용 차이 강조 (결정론적, 루틴 고착)
             working_memory_capacity=7,
             tau=0.1,  # 매우 낮은 탐색 온도 → 착취 강화
             impulsivity=0.1,  # 낮은 충동성
             patience=0.9,  # 높은 인내심 (루틴 유지)
             damping=0.85,
-            local_weight_boost=3.0,  # 로컬 연결 강화 (패턴 고착)
+            local_weight_boost=3.0,  # 로컬 연결 강화 (패턴 고착, 개념적, 향후 구현)
             novelty_sensitivity=3.0,  # 높은 신규성 민감도 (낯선 상황 공포)
             stress_baseline=0.5,  # 높은 스트레스 기준선
         )
@@ -172,7 +178,7 @@ class CognitiveModePresets:
             impulsivity=0.6,
             patience=0.3,
             damping=0.9,  # 높은 감쇠 (트라우마 기억 지속)
-            local_weight_boost=2.0,  # 트라우마 노드 연결 강화
+            local_weight_boost=2.0,  # 트라우마 노드 연결 강화 (개념적, 향후 구현)
             novelty_sensitivity=2.5,  # 매우 높은 신규성 민감도
             stress_baseline=0.7,  # 높은 스트레스 기준선
         )

@@ -64,8 +64,9 @@ def demo_cognitive_polarity():
         decisions_normal.append(decision["action"])
         print(f"   Decision {i+1}: {decision['action']} (utility: {decision['utility']:.3f})")
     
-    consistency_normal = len(set(decisions_normal)) / len(decisions_normal)
-    print(f"\n   📊 Consistency: {consistency_normal:.2%} (lower = more consistent)")
+    unique_choices = len(set(decisions_normal))
+    print(f"\n   📊 선택 분산: {unique_choices}개 고유 선택 (선택 공간: {len(decisions_normal)}개 시도)")
+    print(f"   💡 Normal: 균형잡힌 선택 분산")
     
     # ============================================================
     # Step 2: ADHD Mode - 산만함
@@ -89,9 +90,9 @@ def demo_cognitive_polarity():
         decisions_adhd.append(decision["action"])
         print(f"   Decision {i+1}: {decision['action']} (utility: {decision['utility']:.3f})")
     
-    consistency_adhd = len(set(decisions_adhd)) / len(decisions_adhd)
-    print(f"\n   📊 Consistency: {consistency_adhd:.2%}")
-    print(f"   ⚠️  ADHD: Low consistency (distracted, keeps switching)")
+    unique_choices_adhd = len(set(decisions_adhd))
+    print(f"\n   📊 선택 분산: {unique_choices_adhd}개 고유 선택 (선택 공간: {len(decisions_adhd)}개 시도)")
+    print(f"   ⚠️  ADHD: 높은 선택 분산 (산만함, 계속 전환)")
     
     # ============================================================
     # Step 3: ASD Mode - 패턴 고착
@@ -115,9 +116,9 @@ def demo_cognitive_polarity():
         decisions_asd.append(decision["action"])
         print(f"   Decision {i+1}: {decision['action']} (utility: {decision['utility']:.3f})")
     
-    consistency_asd = len(set(decisions_asd)) / len(decisions_asd)
-    print(f"\n   📊 Consistency: {consistency_asd:.2%}")
-    print(f"   ⚠️  ASD: High consistency (pattern fixation, routine adherence)")
+    unique_choices_asd = len(set(decisions_asd))
+    print(f"\n   📊 선택 분산: {unique_choices_asd}개 고유 선택 (선택 공간: {len(decisions_asd)}개 시도)")
+    print(f"   ⚠️  ASD: 낮은 선택 분산 (패턴 고착, 루틴 고착)")
     
     # ============================================================
     # Step 4: 패턴 고착 테스트 - "빨간색" 강화
@@ -160,12 +161,16 @@ def demo_cognitive_polarity():
     print("="*70)
     
     print("\n┌─────────────────────────────────────────────────────────────────┐")
-    print("│  Mode    │ Consistency │ Entropy │ Key Behavior                │")
+    print("│  Mode    │ 선택 분산 │ Entropy │ Key Behavior                │")
     print("├─────────────────────────────────────────────────────────────────┤")
-    print(f"│  Normal  │  {consistency_normal:.2%}      │  Medium  │ Balanced exploration/exploitation │")
-    print(f"│  ADHD    │  {consistency_adhd:.2%}      │  High    │ Over-exploration (distracted)    │")
-    print(f"│  ASD     │  {consistency_asd:.2%}      │  Low     │ Over-exploitation (fixated)      │")
+    print(f"│  Normal  │  {unique_choices}개      │  Medium  │ Balanced exploration/exploitation │")
+    print(f"│  ADHD    │  {unique_choices_adhd}개      │  High    │ Over-exploration (distracted)    │")
+    print(f"│  ASD     │  {unique_choices_asd}개      │  Low     │ Over-exploitation (fixated)      │")
     print("└─────────────────────────────────────────────────────────────────┘")
+    print("\n💡 선택 분산 해석:")
+    print(f"   • Normal: {unique_choices}개 고유 선택 → 균형잡힌 탐색/착취")
+    print(f"   • ADHD: {unique_choices_adhd}개 고유 선택 → 높은 분산 (산만함)")
+    print(f"   • ASD: {unique_choices_asd}개 고유 선택 → 낮은 분산 (패턴 고착)")
     
     print("\n💡 Key Insights:")
     print("   • ADHD: 계속 시도하고 싶은 욕망 (+) → 높은 엔트로피")

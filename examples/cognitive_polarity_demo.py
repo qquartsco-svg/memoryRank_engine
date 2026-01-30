@@ -118,7 +118,7 @@ def demo_cognitive_polarity():
     
     unique_choices_asd = len(set(decisions_asd))
     print(f"\n   📊 선택 분산: {unique_choices_asd}개 고유 선택 (선택 공간: {len(decisions_asd)}개 시도)")
-    print(f"   ⚠️  ASD: 낮은 선택 분산 (패턴 고착, 루틴 고착)")
+    print(f"   ⚠️  ASD: 낮은 선택 분산 (Softmax 온도 효과로 선택 수렴, 기억 기반 패턴 고착은 아직 미구현)")
     
     # ============================================================
     # Step 4: 패턴 고착 테스트 - "빨간색" 강화
@@ -151,7 +151,8 @@ def demo_cognitive_polarity():
     
     red_count = decisions_asd_new.count("choose_red")
     print(f"\n   📊 'choose_red' selected: {red_count}/5 times")
-    print(f"   ⚠️  ASD: Pattern fixation prevents exploring new options")
+    print(f"   ⚠️  ASD: 선택 수렴 관찰 (Softmax 온도 효과)")
+    print(f"   💡 참고: 기억 기반 패턴 고착은 아직 구현되지 않음 (expected_reward 하드코딩)")
     
     # ============================================================
     # Step 5: 비교 요약
@@ -230,8 +231,8 @@ def demo_sensory_overload():
             }, importance=0.2)
             print(f"   {i}. ✅ Passed: {stimulus} (threshold: {gate_threshold:.2f})")
     
-    print("\n   ⚠️  Result: System overload from too many simultaneous inputs")
-    print("   💡 This simulates ASD sensory sensitivity")
+    print("\n   ⚠️  개념적 시나리오: System overload from too many simultaneous inputs")
+    print("   💡 참고: Thalamus gating은 아직 구현되지 않음 (파라미터 프리셋만 정의됨)")
     
     kernel_asd.save()
 

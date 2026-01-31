@@ -394,5 +394,25 @@ class CompositeMode:
 
 ---
 
+---
+
+## 🔬 냉정 판정 (코드 기준)
+
+**상세 분석**: [IMPLEMENTATION_STATUS_COLD.md](./IMPLEMENTATION_STATUS_COLD.md)
+
+### 핵심 결론
+
+> **"ADHD-ASD는 완성, OCD·Panic은 절반, Epilepsy는 구조 준비 완료 단계"**
+
+> **이 엔진은 '질환 수집기'가 아니라 '질환이 생길 수밖에 없는 물리적 판'을 이미 갖고 있다.**
+
+### 다음 작업
+
+**질환 추가 ❌**
+
+**임계점과 시간축 추가 ⭕**
+
+---
+
 **마지막 업데이트**: 2026-01-31
 

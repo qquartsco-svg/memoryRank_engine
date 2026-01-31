@@ -6,6 +6,7 @@
 - 자동 저장/로드
 - 7개 엔진 통합 인터페이스
 - Edge AI First 설계
+- 파이프라인 패턴 지원 (알고리즘 순서 변경 용이)
 
 사용 예시:
     # 기본 사용
@@ -20,9 +21,14 @@
         kernel.remember("idea", {"content": "great idea"})
         decision = kernel.decide(["rest", "work", "exercise"])
     # 자동 저장됨
+    
+    # 커스텀 파이프라인 사용
+    from cognitive_kernel.pipeline import DecisionPipeline, MemoryLoadStep, ...
+    pipeline = DecisionPipeline([...])
+    kernel.set_pipeline(pipeline)
 
 Author: GNJz (Qquarts)
-Version: 2.0.0
+Version: 2.0.1
 """
 
 from __future__ import annotations
@@ -45,6 +51,26 @@ from .engines.hypothalamus import HypothalamusEngine, HypothalamusConfig
 
 # 모드 임포트
 from .cognitive_modes import CognitiveMode, CognitiveModePresets, ModeConfig
+
+# 파이프라인 임포트 (선택적)
+try:
+    from .pipeline import (
+        DecisionPipeline,
+        PipelineContext,
+        MemoryLoadStep,
+        WorkingMemoryStep,
+        ActionCreationStep,
+        PFCDecisionStep,
+        EntropyCalculationStep,
+        CoreStrengthStep,
+        TorqueGenerationStep,
+        UtilityRecalculationStep,
+        ResultAssemblyStep,
+    )
+    PIPELINE_AVAILABLE = True
+except ImportError:
+    PIPELINE_AVAILABLE = False
+    DecisionPipeline = None
 
 
 @dataclass
@@ -85,11 +111,18 @@ class CognitiveKernel:
     - MemoryRank: 중요도 랭킹 (조광기)
     - PFC: 의사결정 (감독)
     - BasalGanglia: 습관 학습 (스태프)
+    - Thalamus: 입력 필터링
+    - Amygdala: 감정 처리
+    - Hypothalamus: 에너지 관리
     
     진짜 장기 기억:
     - 자동 저장/로드
     - 세션 관리
     - 프로세스 종료 후에도 기억 유지
+    
+    파이프라인 패턴:
+    - 알고리즘 순서 변경 용이
+    - 커스텀 파이프라인 지원
     """
     
     def __init__(
@@ -98,22 +131,22 @@ class CognitiveKernel:
         config: Optional[CognitiveConfig] = None,
         auto_load: bool = True,
         mode: Optional[CognitiveMode] = None,
+        pipeline: Optional[DecisionPipeline] = None,
     ):
         """
         Args:
             session_name: 세션 이름 (저장 파일 이름으로 사용)
             config: 설정 객체
             auto_load: True면 기존 세션 자동 로드
-            mode: 인지 모드 (NORMAL, ADHD, ASD, PTSD)
+            mode: 인지 모드 (None이면 NORMAL)
+            pipeline: 커스텀 파이프라인 (None이면 기본 파이프라인 사용)
         """
         self.session_name = session_name
         self.config = config or CognitiveConfig()
         
         # 모드 설정
-        if mode is None:
-            mode = CognitiveMode.NORMAL
-        self.mode = mode
-        self.mode_config = CognitiveModePresets.get_config(mode)
+        self.mode = mode or CognitiveMode.NORMAL
+        self.mode_config = CognitiveModePresets.get_config(self.mode)
         
         # 저장 경로 설정
         self.storage_path = Path(self.config.storage_dir) / session_name
@@ -132,6 +165,9 @@ class CognitiveKernel:
         self._precession_phi: float = 0.0  # 회전 위상
         self._core_strength_history: List[float] = []
         
+        # 파이프라인 (선택적, None이면 기본 파이프라인 사용)
+        self._pipeline: Optional[DecisionPipeline] = pipeline
+        
         # 자동 로드
         if auto_load and self._session_exists():
             self.load()
@@ -146,6 +182,7 @@ class CognitiveKernel:
         # MemoryRank (중요도 랭킹)
         self.memoryrank = MemoryRankEngine(MemoryRankConfig(
             damping=self.mode_config.damping,
+            local_weight_boost=self.mode_config.local_weight_boost,
         ))
         
         # PFC (의사결정)
@@ -168,9 +205,13 @@ class CognitiveKernel:
         ))
         
         # Amygdala (감정/위협)
+        # AmygdalaConfig는 novelty_sensitivity를 직접 지원하지 않음
+        # 모드별 설정은 엔진 내부에서 처리
         self.amygdala = AmygdalaEngine(AmygdalaConfig())
         
         # Hypothalamus (에너지/스트레스)
+        # HypothalamusConfig는 stress_baseline을 직접 지원하지 않음
+        # 모드별 설정은 엔진 내부에서 처리
         self.hypothalamus = HypothalamusEngine(HypothalamusConfig())
         
         # 클래스 참조 저장
@@ -181,17 +222,56 @@ class CognitiveKernel:
         """
         인지 모드 변경
         
-        Args:
-            mode: CognitiveMode (NORMAL, ADHD, ASD, PTSD)
-        
-        Example:
-            >>> kernel.set_mode(CognitiveMode.ASD)
-            >>> # 이제 패턴 유지 성향이 강화됨
+        모드를 변경하면 엔진들이 자동으로 재초기화됩니다.
         """
         self.mode = mode
         self.mode_config = CognitiveModePresets.get_config(mode)
+        
         # 엔진 재초기화
         self._init_engines()
+    
+    def set_pipeline(self, pipeline: DecisionPipeline) -> None:
+        """
+        커스텀 파이프라인 설정
+        
+        Args:
+            pipeline: DecisionPipeline 인스턴스
+        """
+        if not PIPELINE_AVAILABLE:
+            raise ImportError("Pipeline module not available")
+        self._pipeline = pipeline
+    
+    def get_default_pipeline(self) -> DecisionPipeline:
+        """기본 파이프라인 생성"""
+        if not PIPELINE_AVAILABLE:
+            raise ImportError("Pipeline module not available")
+        
+        return DecisionPipeline([
+            MemoryLoadStep(self, self.config.working_memory_capacity),
+            WorkingMemoryStep(self.pfc),
+            ActionCreationStep(
+                self.pfc,
+                self._calculate_memory_relevance,
+                self._extract_keywords,
+                alpha=0.5,
+            ),
+            PFCDecisionStep(self.pfc),
+            EntropyCalculationStep(),
+            CoreStrengthStep(alpha=0.5),
+            TorqueGenerationStep(
+                self.mode,
+                base_gamma=0.3,
+                omega=0.05,
+                precession_phi=self._precession_phi,
+            ),
+            UtilityRecalculationStep(
+                self.pfc,
+                self._calculate_memory_relevance,
+                self._extract_keywords,
+                alpha=0.5,
+            ),
+            ResultAssemblyStep(self.pfc, self.basal_ganglia),
+        ])
     
     # ==================================================================
     # 핵심 인터페이스 - 간단하게 사용
@@ -220,7 +300,7 @@ class CognitiveKernel:
             
         Example:
             >>> kernel.remember("meeting", {"topic": "project"}, importance=0.9)
-            >>> kernel.remember("idea", {"content": "new feature"}, related_to=["meeting_id"])
+            >>> kernel.remember("idea", {"content": "new feature"}, related_to=[...])
         """
         timestamp = time.time()
         
@@ -290,6 +370,7 @@ class CognitiveKernel:
         context: Optional[str] = None,
         use_habit: bool = True,
         external_torque: Optional[Dict[str, float]] = None,
+        use_pipeline: bool = True,
     ) -> Dict[str, Any]:
         """
         의사결정 (PFC + BasalGanglia)
@@ -299,7 +380,7 @@ class CognitiveKernel:
             context: 상황 컨텍스트
             use_habit: True면 습관 학습 결과도 반영
             external_torque: 외부 토크 값 (옵션별, 세차운동 등에 사용)
-                           예: {"choose_red": 0.3, "choose_blue": -0.1, ...}
+            use_pipeline: True면 파이프라인 패턴 사용 (False면 레거시 방식)
             
         Returns:
             결정 결과
@@ -313,6 +394,60 @@ class CognitiveKernel:
             >>> result = kernel.decide(["choose_red", "choose_blue", "choose_green"], 
             ...                       external_torque=torque)
         """
+        # 파이프라인 패턴 사용
+        if use_pipeline and PIPELINE_AVAILABLE:
+            return self._decide_with_pipeline(options, context, use_habit, external_torque)
+        
+        # 레거시 방식 (기존 코드)
+        return self._decide_legacy(options, context, use_habit, external_torque)
+    
+    def _decide_with_pipeline(
+        self,
+        options: List[str],
+        context: Optional[str] = None,
+        use_habit: bool = True,
+        external_torque: Optional[Dict[str, float]] = None,
+    ) -> Dict[str, Any]:
+        """파이프라인 패턴을 사용한 의사결정"""
+        from .pipeline import PipelineContext
+        
+        # 파이프라인 가져오기 (없으면 기본 파이프라인 생성)
+        if self._pipeline is None:
+            self._pipeline = self.get_default_pipeline()
+        
+        # 컨텍스트 생성
+        pipeline_context = PipelineContext(
+            options=options,
+            metadata={"context": context, "use_habit": use_habit, "external_torque": external_torque},
+        )
+        
+        # 파이프라인 실행
+        pipeline_context = self._pipeline.execute(pipeline_context)
+        
+        # 위상 업데이트
+        if "precession_phi" in pipeline_context.metadata:
+            self._precession_phi = pipeline_context.metadata["precession_phi"]
+        
+        # 엔트로피 히스토리 저장
+        self._entropy_history.append(pipeline_context.entropy)
+        if len(self._entropy_history) > 100:
+            self._entropy_history = self._entropy_history[-100:]
+        
+        # 코어 강도 히스토리 저장
+        self._core_strength_history.append(pipeline_context.core_strength)
+        if len(self._core_strength_history) > 100:
+            self._core_strength_history = self._core_strength_history[-100:]
+        
+        return pipeline_context.result or {}
+    
+    def _decide_legacy(
+        self,
+        options: List[str],
+        context: Optional[str] = None,
+        use_habit: bool = True,
+        external_torque: Optional[Dict[str, float]] = None,
+    ) -> Dict[str, Any]:
+        """레거시 방식 (기존 코드)"""
         # 기억 로드 → Working Memory
         memories = self.recall(k=self.config.working_memory_capacity)
         
@@ -473,6 +608,138 @@ class CognitiveKernel:
             "conflict": pfc_result.action.name != habit_action if (pfc_result.action and habit_action) else False,
         }
     
+    def _decide_with_pipeline(
+        self,
+        options: List[str],
+        context: Optional[str] = None,
+        use_habit: bool = True,
+        external_torque: Optional[Dict[str, float]] = None,
+    ) -> Dict[str, Any]:
+        """파이프라인 패턴을 사용한 의사결정"""
+        from .pipeline import (
+            DecisionPipeline,
+            PipelineContext,
+            MemoryLoadStep,
+            WorkingMemoryStep,
+            ActionCreationStep,
+            PFCDecisionStep,
+            EntropyCalculationStep,
+            CoreStrengthStep,
+            TorqueGenerationStep,
+            UtilityRecalculationStep,
+            ResultAssemblyStep,
+        )
+        
+        # 파이프라인 가져오기 (없으면 기본 파이프라인 생성)
+        if self._pipeline is None:
+            self._pipeline = DecisionPipeline([
+                MemoryLoadStep(self, self.config.working_memory_capacity),
+                WorkingMemoryStep(self.pfc),
+                ActionCreationStep(
+                    self.pfc,
+                    self._calculate_memory_relevance,
+                    self._extract_keywords,
+                    alpha=0.5,
+                ),
+                PFCDecisionStep(self.pfc),
+                EntropyCalculationStep(),
+                CoreStrengthStep(alpha=0.5),
+                TorqueGenerationStep(
+                    self.mode,
+                    base_gamma=0.3,
+                    omega=0.05,
+                    precession_phi=self._precession_phi,
+                ),
+                UtilityRecalculationStep(
+                    self.pfc,
+                    self._calculate_memory_relevance,
+                    self._extract_keywords,
+                    alpha=0.5,
+                ),
+                ResultAssemblyStep(self.pfc, self.basal_ganglia),
+            ])
+        
+        # 컨텍스트 생성
+        pipeline_context = PipelineContext(
+            options=options,
+            metadata={"context": context, "use_habit": use_habit, "external_torque": external_torque},
+        )
+        
+        # 파이프라인 실행
+        pipeline_context = self._pipeline.execute(pipeline_context)
+        
+        # 위상 업데이트
+        if "precession_phi" in pipeline_context.metadata:
+            self._precession_phi = pipeline_context.metadata["precession_phi"]
+        
+        # 엔트로피 히스토리 저장
+        self._entropy_history.append(pipeline_context.entropy)
+        if len(self._entropy_history) > 100:
+            self._entropy_history = self._entropy_history[-100:]
+        
+        # 코어 강도 히스토리 저장
+        self._core_strength_history.append(pipeline_context.core_strength)
+        if len(self._core_strength_history) > 100:
+            self._core_strength_history = self._core_strength_history[-100:]
+        
+        return pipeline_context.result or {}
+    
+    def set_pipeline(self, pipeline: Any) -> None:
+        """
+        커스텀 파이프라인 설정
+        
+        Args:
+            pipeline: DecisionPipeline 인스턴스
+        """
+        if not self._pipeline_available:
+            raise ImportError("Pipeline module not available. Install required dependencies.")
+        self._pipeline = pipeline
+    
+    def get_default_pipeline(self) -> Any:
+        """기본 파이프라인 생성"""
+        if not self._pipeline_available:
+            raise ImportError("Pipeline module not available. Install required dependencies.")
+        
+        from .pipeline import (
+            DecisionPipeline,
+            MemoryLoadStep,
+            WorkingMemoryStep,
+            ActionCreationStep,
+            PFCDecisionStep,
+            EntropyCalculationStep,
+            CoreStrengthStep,
+            TorqueGenerationStep,
+            UtilityRecalculationStep,
+            ResultAssemblyStep,
+        )
+        
+        return DecisionPipeline([
+            MemoryLoadStep(self, self.config.working_memory_capacity),
+            WorkingMemoryStep(self.pfc),
+            ActionCreationStep(
+                self.pfc,
+                self._calculate_memory_relevance,
+                self._extract_keywords,
+                alpha=0.5,
+            ),
+            PFCDecisionStep(self.pfc),
+            EntropyCalculationStep(),
+            CoreStrengthStep(alpha=0.5),
+            TorqueGenerationStep(
+                self.mode,
+                base_gamma=0.3,
+                omega=0.05,
+                precession_phi=self._precession_phi,
+            ),
+            UtilityRecalculationStep(
+                self.pfc,
+                self._calculate_memory_relevance,
+                self._extract_keywords,
+                alpha=0.5,
+            ),
+            ResultAssemblyStep(self.pfc, self.basal_ganglia),
+        ])
+    
     def learn_from_reward(
         self,
         context: str,
@@ -561,11 +828,12 @@ class CognitiveKernel:
         
         # 엣지가 없으면 시간 순서로 연결
         if not self._edges:
-            for i in range(len(events) - 1):
-                self._edges.append((events[i].id, events[i+1].id, 0.5))
-            # 이벤트가 1개뿐이면 자기 자신으로 연결
-            if len(events) == 1:
-                self._edges.append((events[0].id, events[0].id, 1.0))
+            if len(events) > 1:
+                for i in range(len(events) - 1):
+                    self._edges.append((events[i].id, events[i+1].id, 0.5))
+            elif len(events) == 1:
+                # 이벤트가 1개뿐이면 자기 자신으로 연결
+                self._edges.append((events[0].id, events[0].id, 0.5))
         
         # 노드 속성 생성
         recency_scores = self.panorama.get_recency_scores()
@@ -581,7 +849,11 @@ class CognitiveKernel:
         
         # 그래프 구축
         if self._edges and node_attrs:
-            self.memoryrank.build_graph(self._edges, node_attrs)
+            self.memoryrank.build_graph(
+                self._edges,
+                node_attrs,
+                self.mode_config.local_weight_boost,
+            )
             self.memoryrank.calculate_importance()
     
     # ==================================================================
@@ -626,6 +898,7 @@ class CognitiveKernel:
             "event_count": self._event_count,
             "last_saved": time.time(),
             "config": self.config.to_dict(),
+            "mode": self.mode.value,
         }, indent=2))
         
         self._is_dirty = False
@@ -673,6 +946,13 @@ class CognitiveKernel:
         if meta_path.exists():
             meta = json.loads(meta_path.read_text())
             self._event_count = meta.get("event_count", 0)
+            # 모드 복구 (선택적)
+            if "mode" in meta:
+                try:
+                    self.mode = CognitiveMode(meta["mode"])
+                    self.mode_config = CognitiveModePresets.get_config(self.mode)
+                except ValueError:
+                    pass
         
         self._is_dirty = False
         return stats
@@ -708,6 +988,8 @@ class CognitiveKernel:
             "edge_count": len(self._edges),
             "is_dirty": self._is_dirty,
             "auto_save": self.config.auto_save,
+            "mode": self.mode.value,
+            "pipeline_enabled": self._pipeline is not None,
         }
     
     def clear(self):
@@ -718,9 +1000,10 @@ class CognitiveKernel:
         self._is_dirty = True
     
     def __repr__(self) -> str:
-        return f"CognitiveKernel(session='{self.session_name}', events={len(self.panorama)})"
+        return f"CognitiveKernel(session='{self.session_name}', events={len(self.panorama)}, mode={self.mode.value})"
     
     def __len__(self) -> int:
+        """이벤트 수 반환"""
         return len(self.panorama)
 
 
@@ -732,4 +1015,3 @@ def create_kernel(session_name: str = "default", **kwargs) -> CognitiveKernel:
     """CognitiveKernel 생성 편의 함수"""
     config = CognitiveConfig(**kwargs)
     return CognitiveKernel(session_name, config)
-

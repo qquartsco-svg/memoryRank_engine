@@ -219,6 +219,20 @@ class CognitiveKernel:
         # 모드별 설정은 엔진 내부에서 처리
         self.hypothalamus = HypothalamusEngine(HypothalamusConfig())
         
+        # Dynamics Engine (동역학 엔진)
+        dynamics_config = DynamicsConfig(
+            base_gamma=0.3,
+            omega=0.05,
+            core_decay_rate=self.mode_config.core_decay_rate,
+            memory_update_failure=self.mode_config.memory_update_failure,
+            loop_integrity_decay=self.mode_config.loop_integrity_decay,
+            entropy_threshold_ratio=0.8,
+            core_distress_threshold=0.3,
+            history_size=100,
+            memory_alpha=0.5,
+        )
+        self.dynamics = DynamicsEngine(dynamics_config)
+        
         # 클래스 참조 저장
         self._MemoryNodeAttributes = MemoryNodeAttributes
         self._Action = Action
@@ -429,19 +443,12 @@ class CognitiveKernel:
         # 파이프라인 실행
         pipeline_context = self._pipeline.execute(pipeline_context)
         
-        # 위상 업데이트
-        if "precession_phi" in pipeline_context.metadata:
-            self._precession_phi = pipeline_context.metadata["precession_phi"]
-        
-        # 엔트로피 히스토리 저장
-        self._entropy_history.append(pipeline_context.entropy)
-        if len(self._entropy_history) > 100:
-            self._entropy_history = self._entropy_history[-100:]
-        
-        # 코어 강도 히스토리 저장
-        self._core_strength_history.append(pipeline_context.core_strength)
-        if len(self._core_strength_history) > 100:
-            self._core_strength_history = self._core_strength_history[-100:]
+        # 위상 업데이트 (DynamicsEngine 내부에서 처리됨)
+        # 히스토리 업데이트 (DynamicsEngine 내부에서 처리됨)
+        self.dynamics.update_history(
+            pipeline_context.entropy,
+            pipeline_context.core_strength,
+        )
         
         return pipeline_context.result or {}
     
@@ -496,27 +503,17 @@ class CognitiveKernel:
             opt: prob for opt, prob in zip(options, probabilities)
         }
         
-        # 엔트로피 계산: E_n = -Σ P_n(k) ln P_n(k)
-        entropy = 0.0
-        for prob in probabilities:
-            if prob > 0:
-                entropy -= prob * math.log(prob)
+        # 엔트로피 계산 (DynamicsEngine 사용)
+        entropy = self.dynamics.calculate_entropy(probabilities)
         
-        # 엔트로피 히스토리 저장
-        self._entropy_history.append(entropy)
-        # 최근 100개만 유지
-        if len(self._entropy_history) > 100:
-            self._entropy_history = self._entropy_history[-100:]
+        # 코어 강도 계산 (DynamicsEngine 사용)
+        core_strength = self.dynamics.calculate_core_strength(
+            memories,
+            memory_update_failure=self.mode_config.memory_update_failure,
+        )
         
-        # 코어 강도 계산 (중력 코어)
-        core_strength = 0.0
-        if memories:
-            total_importance = sum(m.get("importance", 0.0) for m in memories)
-            alpha = 0.5  # 기억 영향 계수
-            core_strength = min(1.0, alpha * total_importance / len(memories))
-        self._core_strength_history.append(core_strength)
-        if len(self._core_strength_history) > 100:
-            self._core_strength_history = self._core_strength_history[-100:]
+        # 히스토리 업데이트
+        self.dynamics.update_history(entropy, core_strength)
         
         # 엔트로피 기반 자동 회전 토크 생성
         # 엔트로피가 높을수록 회전 토크 증가 (ADHD: 궤도 커짐)
@@ -550,17 +547,14 @@ class CognitiveKernel:
             psi = {opt: i * 2 * math.pi / len(options) 
                    for i, opt in enumerate(options)}
             
-            # 회전 토크 계산: T_n(k) = torque_strength * cos(φ_n - ψ_k)
-            for opt in options:
-                auto_torque[opt] = torque_strength * math.cos(
-                    self._precession_phi - psi[opt]
-                )
-            
-            # 위상 업데이트 (느린 시간척도)
-            self._precession_phi += omega
-            # 2π 주기로 정규화
-            if self._precession_phi >= 2 * math.pi:
-                self._precession_phi -= 2 * math.pi
+            # 회전 토크 생성 (DynamicsEngine 사용)
+            auto_torque = self.dynamics.generate_torque(
+                options,
+                entropy,
+                self.mode,
+                base_gamma=base_gamma,
+                omega=omega,
+            )
         
         # 자동 토크를 외부 토크에 병합
         if external_torque is None:
@@ -647,14 +641,9 @@ class CognitiveKernel:
                     alpha=0.5,
                 ),
                 PFCDecisionStep(self.pfc),
-                EntropyCalculationStep(),
-                CoreStrengthStep(self, alpha=0.5),  # self 전달하여 Core Decay 접근
-                TorqueGenerationStep(
-                    self.mode,
-                    base_gamma=0.3,
-                    omega=0.05,
-                    precession_phi_ref=self,  # self를 전달하여 위상 참조
-                ),
+                EntropyCalculationStep(self.dynamics),  # DynamicsEngine 사용
+                CoreStrengthStep(self.dynamics, self),  # DynamicsEngine 사용
+                TorqueGenerationStep(self.dynamics, self.mode),  # DynamicsEngine 사용
                 UtilityRecalculationStep(
                     self.pfc,
                     self._calculate_memory_relevance,
@@ -673,19 +662,12 @@ class CognitiveKernel:
         # 파이프라인 실행
         pipeline_context = self._pipeline.execute(pipeline_context)
         
-        # 위상 업데이트
-        if "precession_phi" in pipeline_context.metadata:
-            self._precession_phi = pipeline_context.metadata["precession_phi"]
-        
-        # 엔트로피 히스토리 저장
-        self._entropy_history.append(pipeline_context.entropy)
-        if len(self._entropy_history) > 100:
-            self._entropy_history = self._entropy_history[-100:]
-        
-        # 코어 강도 히스토리 저장
-        self._core_strength_history.append(pipeline_context.core_strength)
-        if len(self._core_strength_history) > 100:
-            self._core_strength_history = self._core_strength_history[-100:]
+        # 위상 업데이트 (DynamicsEngine 내부에서 처리됨)
+        # 히스토리 업데이트 (DynamicsEngine 내부에서 처리됨)
+        self.dynamics.update_history(
+            pipeline_context.entropy,
+            pipeline_context.core_strength,
+        )
         
         return pipeline_context.result or {}
     
@@ -1005,15 +987,14 @@ class CognitiveKernel:
             "pipeline_enabled": self._pipeline is not None,
         }
         
-        # Core Decay 상태 추가
-        if self._persistent_core is not None:
-            status_dict["core_decay"] = {
-                "persistent_core": self._persistent_core,
-                "core_decay_rate": self.mode_config.core_decay_rate,
-                "memory_update_failure": self.mode_config.memory_update_failure,
-                "loop_integrity_decay": self.mode_config.loop_integrity_decay,
-                "cognitive_distress": self._cognitive_distress,
-            }
+        # Dynamics Engine 상태 추가
+        dynamics_status = self.dynamics.get_status()
+        status_dict["dynamics"] = {
+            **dynamics_status,
+            "core_decay_rate": self.mode_config.core_decay_rate,
+            "memory_update_failure": self.mode_config.memory_update_failure,
+            "loop_integrity_decay": self.mode_config.loop_integrity_decay,
+        }
         
         return status_dict
     

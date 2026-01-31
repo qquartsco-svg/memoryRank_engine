@@ -226,7 +226,6 @@ class TorqueGenerationStep(PipelineStep):
             context.metadata["precession_phi"] = new_phi
         
         context.auto_torque = auto_torque
-        context.metadata["precession_phi"] = self._precession_phi
         return context
 
 

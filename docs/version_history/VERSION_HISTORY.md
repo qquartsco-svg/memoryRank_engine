@@ -2,7 +2,7 @@
 
 > **Cognitive Kernel 버전 변경 이력**
 
-**최종 업데이트**: 2026-01-31
+**최종 업데이트**: 2026-02-01
 
 ---
 
@@ -60,6 +60,16 @@
 - `docs/DYNAMICS_ENGINE_INTEGRATION_STATUS.md`
 - `docs/DYNAMICS_ENGINE_FINAL_STATUS.md`
 - `docs/development/WORK_LOG_2026_01_31.md`
+- `docs/version_history/PHAM_BLOCKCHAIN_LOG_v2.0.2.md`
+- `docs/development/WORK_LOG_2026_02_01.md`
+- `NEXT_TASKS.md`
+
+### PHAM 블록체인 해시 기록
+
+모든 주요 파일의 SHA256 해시가 기록되었습니다:
+- Dynamics Engine v1.0.0: 4개 파일
+- Cognitive Kernel v2.0.2: 4개 파일
+- 상세 내용: `docs/version_history/PHAM_BLOCKCHAIN_LOG.md`
 
 ---
 

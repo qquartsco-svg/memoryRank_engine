@@ -165,6 +165,11 @@ class CognitiveKernel:
         self._precession_phi: float = 0.0  # 회전 위상
         self._core_strength_history: List[float] = []
         
+        # Core Decay 상태 (중력 붕괴 동역학)
+        self._persistent_core: Optional[float] = None  # 지속 코어 강도
+        self._last_decay_time: Optional[float] = None  # 마지막 감쇠 시간
+        self._cognitive_distress: bool = False  # 인지적 절규 상태
+        
         # 파이프라인 (선택적, None이면 기본 파이프라인 사용)
         self._pipeline: Optional[DecisionPipeline] = pipeline
         self._pipeline_available = PIPELINE_AVAILABLE

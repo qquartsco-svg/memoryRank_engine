@@ -301,6 +301,10 @@ class ResultAssemblyStep(PipelineStep):
                 context.options,
             )
         
+        # 인지적 절규 상태 확인
+        cognitive_distress = context.metadata.get("cognitive_distress", False)
+        distress_message = context.metadata.get("distress_message", "")
+        
         context.result = {
             "action": pfc_result.action.name if pfc_result and pfc_result.action else None,
             "utility": pfc_result.utility if pfc_result else 0.0,
@@ -314,6 +318,8 @@ class ResultAssemblyStep(PipelineStep):
                 if (pfc_result and pfc_result.action and habit_action)
                 else False
             ),
+            "cognitive_distress": cognitive_distress,  # 인지적 절규 상태
+            "distress_message": distress_message,  # 절규 메시지
         }
         
         return context

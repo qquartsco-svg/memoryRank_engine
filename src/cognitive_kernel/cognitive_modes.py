@@ -35,6 +35,10 @@ class CognitiveMode(Enum):
     IED = "ied"               # 분노조절장애: 충동, 폭발적 분노
     DEPRESSION = "depression" # 우울증: 무기력, 부정적 편향
     BIPOLAR = "bipolar"       # 양극성 장애: 조증 ↔ 우울
+    
+    # 중력 붕괴 질환 (Core Decay)
+    DEMENTIA = "dementia"     # 치매: 코어 약화 + 루프 잔존 (느린 붕괴)
+    ALZHEIMER = "alzheimer"   # 알츠하이머: 코어 소실 + 루프 붕괴 (빠른 붕괴)
 
 
 @dataclass
@@ -67,6 +71,14 @@ class ModeConfig:
     # Hypothalamus (에너지/스트레스)
     stress_baseline: float = 0.3
     
+    # Core Decay (중력 붕괴 동역학)
+    core_decay_rate: float = 0.0  # λ: 코어 감쇠율 (초당, 0이면 정상, 클수록 빠르게 붕괴)
+                                  # 수식: C(t) = C(0) * exp(-λ * Δt)
+    memory_update_failure: float = 0.0  # 새 기억의 중요도 반영 실패율 (0~1)
+                                        # 0 = 정상, 1 = 새 기억이 코어에 전혀 기여하지 못함
+    loop_integrity_decay: float = 0.0  # 루프 무결성 감쇠율 (MemoryRank 엣지 소실)
+                                       # 0 = 정상, 1 = 모든 연결 단절
+    
     def to_dict(self) -> Dict[str, Any]:
         """딕셔너리로 변환"""
         return {
@@ -92,6 +104,11 @@ class ModeConfig:
             },
             "hypothalamus": {
                 "stress_baseline": self.stress_baseline,
+            },
+            "core_decay": {
+                "core_decay_rate": self.core_decay_rate,
+                "memory_update_failure": self.memory_update_failure,
+                "loop_integrity_decay": self.loop_integrity_decay,
             },
         }
 
@@ -364,6 +381,81 @@ class CognitiveModePresets:
             local_weight_boost=3.0,  # 로컬 연결 강화
             novelty_sensitivity=0.5,  # 낮은 민감도
             stress_baseline=0.7,  # 높은 스트레스
+        )
+    
+    @staticmethod
+    def dementia() -> ModeConfig:
+        """
+        치매 모드: 코어 약화 + 루프 잔존 (느린 붕괴)
+        
+        동역학 정의:
+        - E: 증가 (엔트로피 증가)
+        - T: 있음 (회전은 유지)
+        - C: ↓ (느리게 감소) - C(t) = C(0) * exp(-λ_d * t), λ_d 작음
+        - L: 부분 유지 (루프는 남아 있음)
+        
+        특징:
+        - 중력은 약해지지만 완전히 사라지지는 않음
+        - 오래된 기억은 남아 있음
+        - 새 기억은 축적되지 않음
+        - 판단은 느려지지만 '나'는 아직 있음
+        """
+        return ModeConfig(
+            gate_threshold=0.0,  # 필터링 능력 상실
+            max_channels=5,
+            decision_temperature=0.5,  # 판단력 저하
+            working_memory_capacity=2,  # Miller's Law 붕괴
+            tau=1.5,  # 의미 없는 배회 강화
+            impulsivity=0.6,
+            patience=0.3,
+            damping=0.5,  # 기억 전파력 약화
+            local_weight_boost=0.1,  # 연결 고리 약화
+            novelty_sensitivity=0.3,  # 낮은 신규성 민감도
+            stress_baseline=0.5,
+            # Core Decay 파라미터
+            core_decay_rate=0.001,  # λ_d: 느린 붕괴 (초당 0.1% 감소)
+            memory_update_failure=0.3,  # 새 기억 30% 실패
+            loop_integrity_decay=0.0005,  # 루프 느린 감쇠
+        )
+    
+    @staticmethod
+    def alzheimer() -> ModeConfig:
+        """
+        알츠하이머 모드: 코어 소실 + 루프 붕괴 (빠른 붕괴)
+        
+        동역학 정의:
+        - E: 최대 (엔트로피 최대)
+        - T: 있음 (중요! 생각은 계속 돈다)
+        - C: → 0 (중력 소실)
+        - L: 붕괴 (루프 무결성 완전 파괴)
+        
+        붕괴 순서:
+        ① Core Strength 붕괴: C(t) = C(0) * exp(-λ_a * t), λ_a 큼
+        ② Loop Integrity 붕괴: MemoryRank 엣지 소실
+        ③ 시간축 붕괴: "방금 전"이 사라짐, 현재가 매 순간 초기화
+        
+        특징:
+        - 생각은 계속 발생하지만 귀환력이 없음
+        - 새 기억이 코어에 기여하지 못함
+        - 시간이 연결되지 않음
+        - '생각은 있는데, 나로 돌아오지 않는다'
+        """
+        return ModeConfig(
+            gate_threshold=0.0,  # 필터링 능력 완전 상실
+            max_channels=10,  # 모든 자극이 고통으로 다가옴
+            decision_temperature=0.1,  # β → 0: 논리적 판단 불가, 무작위 행동
+            working_memory_capacity=1,  # Miller's Law 완전 붕괴
+            tau=2.0,  # 탐색 과다 (의미 없는 배회)
+            impulsivity=0.8,
+            patience=0.1,
+            damping=0.3,  # 기억 연결 완전 파괴
+            local_weight_boost=0.0,  # 연결 고리 완전 단절
+            novelty_sensitivity=0.1,  # 신규성 인식 불가
+            stress_baseline=0.8,  # 높은 스트레스
+            # Core Decay 파라미터
+            core_decay_rate=0.01,  # λ_a: 빠른 붕괴 (초당 1% 감소)
+            memory_update_failure=0.8,  # 새 기억 80% 실패 (코어에 기여하지 못함)
+            loop_integrity_decay=0.01,  # 루프 빠른 감쇠 (엣지 급격히 소실)
         )
     
     @staticmethod

@@ -405,7 +405,7 @@ class CognitiveModePresets:
         - 새 기억은 축적되지 않음
         - 판단은 느려지지만 '나'는 아직 있음
         """
-        return ModeConfig(
+        config = ModeConfig(
             gate_threshold=0.0,  # 필터링 능력 상실
             max_channels=5,
             decision_temperature=0.5,  # 판단력 저하
@@ -450,7 +450,7 @@ class CognitiveModePresets:
         - 시간이 연결되지 않음
         - '생각은 있는데, 나로 돌아오지 않는다'
         """
-        return ModeConfig(
+        config = ModeConfig(
             gate_threshold=0.0,  # 필터링 능력 완전 상실
             max_channels=10,  # 모든 자극이 고통으로 다가옴
             decision_temperature=0.1,  # β → 0: 논리적 판단 불가, 무작위 행동

@@ -49,6 +49,9 @@ from .engines import (
     Action,
     BasalGangliaEngine,
     BasalGangliaConfig,
+    DynamicsEngine,
+    DynamicsConfig,
+    DynamicsState,
 )
 
 # Vector DB 통합 (선택적)
@@ -82,6 +85,9 @@ __all__ = [
     "Action",
     "BasalGangliaEngine",
     "BasalGangliaConfig",
+    "DynamicsEngine",
+    "DynamicsConfig",
+    "DynamicsState",
     # Vector DB
     "VectorDBBackend",
     "VECTOR_DB_AVAILABLE",

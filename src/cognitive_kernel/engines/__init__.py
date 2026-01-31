@@ -18,6 +18,7 @@ from .panorama import PanoramaMemoryEngine, PanoramaConfig
 from .memoryrank import MemoryRankEngine, MemoryRankConfig, MemoryNodeAttributes
 from .pfc import PFCEngine, PFCConfig, Action
 from .basal_ganglia import BasalGangliaEngine, BasalGangliaConfig
+from .dynamics import DynamicsEngine, DynamicsConfig, DynamicsState
 
 __all__ = [
     # Panorama
@@ -34,5 +35,9 @@ __all__ = [
     # BasalGanglia
     'BasalGangliaEngine',
     'BasalGangliaConfig',
+    # Dynamics
+    'DynamicsEngine',
+    'DynamicsConfig',
+    'DynamicsState',
 ]
 

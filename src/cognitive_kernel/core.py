@@ -48,6 +48,7 @@ from .engines.basal_ganglia import BasalGangliaEngine, BasalGangliaConfig
 from .engines.thalamus import ThalamusEngine, ThalamusConfig
 from .engines.amygdala import AmygdalaEngine, AmygdalaConfig
 from .engines.hypothalamus import HypothalamusEngine, HypothalamusConfig
+from .engines.dynamics import DynamicsEngine, DynamicsConfig
 
 # 모드 임포트
 from .cognitive_modes import CognitiveMode, CognitiveModePresets, ModeConfig
@@ -160,19 +161,17 @@ class CognitiveKernel:
         self._is_dirty = False
         self._edges: List[Tuple[str, str, float]] = []
         
-        # 동역학 상태 (엔트로피 기반 회전)
-        self._entropy_history: List[float] = []
-        self._precession_phi: float = 0.0  # 회전 위상
-        self._core_strength_history: List[float] = []
-        
-        # Core Decay 상태 (중력 붕괴 동역학)
-        self._persistent_core: Optional[float] = None  # 지속 코어 강도
-        self._last_decay_time: Optional[float] = None  # 마지막 감쇠 시간
-        self._cognitive_distress: bool = False  # 인지적 절규 상태
-        
         # 파이프라인 (선택적, None이면 기본 파이프라인 사용)
         self._pipeline: Optional[DecisionPipeline] = pipeline
         self._pipeline_available = PIPELINE_AVAILABLE
+        
+        # 동역학 상태는 이제 DynamicsEngine 내부로 이동됨
+        # self._entropy_history → self.dynamics.state.entropy_history
+        # self._precession_phi → self.dynamics.state.precession_phi
+        # self._core_strength_history → self.dynamics.state.core_strength_history
+        # self._persistent_core → self.dynamics.state.persistent_core
+        # self._last_decay_time → self.dynamics.state.last_decay_time
+        # self._cognitive_distress → self.dynamics.state.cognitive_distress
         
         # 자동 로드
         if auto_load and self._session_exists():

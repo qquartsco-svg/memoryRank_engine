@@ -125,159 +125,78 @@ class PFCDecisionStep(PipelineStep):
 class EntropyCalculationStep(PipelineStep):
     """엔트로피 계산 단계"""
     
+    def __init__(self, dynamics_engine):
+        """
+        Args:
+            dynamics_engine: DynamicsEngine 인스턴스
+        """
+        self.dynamics_engine = dynamics_engine
+    
     def process(self, context: PipelineContext) -> PipelineContext:
         """엔트로피 계산"""
-        import math
-        
-        entropy = 0.0
-        for prob in context.probabilities:
-            if prob > 0:
-                entropy -= prob * math.log(prob)
-        
-        context.entropy = entropy
+        context.entropy = self.dynamics_engine.calculate_entropy(
+            context.probabilities
+        )
         return context
 
 
 class CoreStrengthStep(PipelineStep):
     """코어 강도 계산 단계 (Core Decay 포함)"""
     
-    def __init__(self, kernel, alpha: float = 0.5):
+    def __init__(self, dynamics_engine, kernel):
         """
         Args:
-            kernel: CognitiveKernel 인스턴스 (Core Decay 상태 접근)
-            alpha: 기억 영향 계수
+            dynamics_engine: DynamicsEngine 인스턴스
+            kernel: CognitiveKernel 인스턴스 (mode_config 접근)
         """
+        self.dynamics_engine = dynamics_engine
         self.kernel = kernel
-        self.alpha = alpha
     
     def process(self, context: PipelineContext) -> PipelineContext:
         """코어 강도 계산 (Core Decay 동역학 적용)"""
-        import math
-        import time
+        # DynamicsEngine을 사용하여 코어 강도 계산
+        context.core_strength = self.dynamics_engine.calculate_core_strength(
+            context.memories,
+            memory_update_failure=self.kernel.mode_config.memory_update_failure,
+            alpha=self.dynamics_engine.config.memory_alpha,
+        )
         
-        # 1. 현재 원시 코어 강도 계산
-        current_raw_core = 0.0
-        if context.memories:
-            total_importance = sum(
-                m.get("importance", 0.0) for m in context.memories
-            )
-            
-            # 알츠하이머의 경우 새 기억의 중요도 반영을 차단
-            if self.kernel.mode_config.memory_update_failure > 0:
-                total_importance *= (1.0 - self.kernel.mode_config.memory_update_failure)
-            
-            current_raw_core = min(
-                1.0, self.alpha * total_importance / len(context.memories)
-            )
+        # 인지적 절규 확인
+        distress, message = self.dynamics_engine.check_cognitive_distress(
+            context.entropy,
+            context.core_strength,
+            len(context.options),
+        )
+        context.metadata["cognitive_distress"] = distress
+        context.metadata["distress_message"] = message
         
-        # 2. Core Decay (물리적 시간 붕괴 항 적용)
-        # 수식: C(t) = C(0) * exp(-λ * Δt)
-        if self.kernel.mode_config.core_decay_rate > 0:
-            # 초기화
-            if self.kernel._persistent_core is None:
-                self.kernel._persistent_core = current_raw_core
-                self.kernel._last_decay_time = time.time()
-            
-            # 시간 경과 계산
-            delta_t = time.time() - self.kernel._last_decay_time
-            lambda_decay = self.kernel.mode_config.core_decay_rate
-            
-            # 지수 감쇠 적용
-            self.kernel._persistent_core *= math.exp(-lambda_decay * delta_t)
-            core_strength = self.kernel._persistent_core
-            self.kernel._last_decay_time = time.time()
-        else:
-            # 정상 모드: 원시 코어 강도 사용
-            core_strength = current_raw_core
-            self.kernel._persistent_core = None
-            self.kernel._last_decay_time = None
-        
-        # 3. 인지적 절규 (Cognitive Distress)
-        # 엔트로피는 높은데 이를 붙잡을 중력(Core)이 임계치(0.3) 아래로 떨어질 때
-        if len(context.options) > 1:
-            max_entropy = math.log(len(context.options))
-            entropy_threshold = max_entropy * 0.8  # 최대치의 80%
-            
-            if context.entropy > entropy_threshold and core_strength < 0.3:
-                self.kernel._cognitive_distress = True
-                # 메타데이터에 인지적 절규 신호 저장
-                context.metadata["cognitive_distress"] = True
-                context.metadata["distress_message"] = "기억이 안 나..."
-            else:
-                self.kernel._cognitive_distress = False
-                context.metadata["cognitive_distress"] = False
-        
-        context.core_strength = core_strength
         return context
 
 
 class TorqueGenerationStep(PipelineStep):
     """회전 토크 생성 단계"""
     
-    def __init__(
-        self,
-        mode,
-        base_gamma: float = 0.3,
-        omega: float = 0.05,
-        precession_phi_ref=None,  # 위상 참조 (리스트 또는 객체)
-    ):
+    def __init__(self, dynamics_engine, mode):
+        """
+        Args:
+            dynamics_engine: DynamicsEngine 인스턴스
+            mode: 인지 모드 (CognitiveMode)
+        """
+        self.dynamics_engine = dynamics_engine
         self.mode = mode
-        self.base_gamma = base_gamma
-        self.omega = omega
-        self._precession_phi_ref = precession_phi_ref  # 위상 참조
     
     def process(self, context: PipelineContext) -> PipelineContext:
         """회전 토크 생성"""
-        import math
-        from .cognitive_modes import CognitiveMode
+        # DynamicsEngine을 사용하여 회전 토크 생성
+        context.auto_torque = self.dynamics_engine.generate_torque(
+            context.options,
+            context.entropy,
+            self.mode,
+        )
         
-        auto_torque = {}
-        if len(context.options) > 1:
-            max_entropy = math.log(len(context.options))
-            normalized_entropy = (
-                context.entropy / max_entropy if max_entropy > 0 else 0.0
-            )
-            
-            # 모드별 gamma
-            if self.mode == CognitiveMode.ADHD:
-                gamma = self.base_gamma * 1.5
-            elif self.mode == CognitiveMode.ASD:
-                gamma = self.base_gamma * 0.5
-            else:
-                gamma = self.base_gamma
-            
-            torque_strength = gamma * normalized_entropy
-            
-            # 옵션별 위상
-            psi = {
-                opt: i * 2 * math.pi / len(context.options)
-                for i, opt in enumerate(context.options)
-            }
-            
-            # 위상 가져오기 (참조 또는 기본값)
-            if self._precession_phi_ref is not None:
-                if isinstance(self._precession_phi_ref, list):
-                    current_phi = self._precession_phi_ref[0]
-                else:
-                    current_phi = getattr(self._precession_phi_ref, '_precession_phi', 0.0)
-            else:
-                current_phi = 0.0
-            
-            # 회전 토크 계산
-            for opt in context.options:
-                auto_torque[opt] = torque_strength * math.cos(
-                    current_phi - psi[opt]
-                )
-            
-            # 위상 업데이트
-            new_phi = current_phi + self.omega
-            if new_phi >= 2 * math.pi:
-                new_phi -= 2 * math.pi
-            
-            # 위상 저장 (메타데이터에)
-            context.metadata["precession_phi"] = new_phi
+        # 위상 저장 (메타데이터에)
+        context.metadata["precession_phi"] = self.dynamics_engine.state.precession_phi
         
-        context.auto_torque = auto_torque
         return context
 
 
